@@ -1,11 +1,15 @@
 package org.nanodb.chunker;
 
-import java.util.Optional;
-
 public abstract class Chunker {
     protected int chunkSize;
 
-    public Chunker(int chunkSize) {this.chunkSize = chunkSize;}
+    public Chunker(int chunkSize) {
+        this.chunkSize = chunkSize;
+    }
+    
+    public int getChunkSize() {
+        return chunkSize;
+    }
     /**
      * Gets a fixed sized chunk based on its ID.
      * It is the responsibility of the caller to store the ID, except the initial ID.
