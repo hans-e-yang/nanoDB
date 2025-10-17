@@ -34,6 +34,12 @@ public class Main {
                         System.out.println("Duplicate key.");
                     } else if (execute == ExecuteResult.TABLE_FULL) {
                         System.out.println("Table full.");
+                    } else if (execute == ExecuteResult.TABLE_NOT_FOUND) {
+                        System.out.println("Table not found.");
+                    } else if (execute == ExecuteResult.COLUMN_NOT_FOUND) {
+                        System.out.println("Column not found.");
+                    } else {
+                        System.out.println("Error.");
                     }
                 } catch (IOException e) {
                     System.out.println("IO error: " + e.getMessage());

@@ -17,6 +17,9 @@ public class Executor {
                     return ExecuteResult.ERROR;
                 }
             case DROP_TABLE:
+                if (!db.tableExists(statement.tableName)) {
+                    return ExecuteResult.TABLE_NOT_FOUND;
+                }
                 if (db.dropTable(statement.tableName)) {
                     return ExecuteResult.SUCCESS;
                 } else {
@@ -30,19 +33,28 @@ public class Executor {
                         return ExecuteResult.DUPLICATE_KEY;
                     }
                 } else {
-                    return ExecuteResult.ERROR;
+                    return ExecuteResult.TABLE_NOT_FOUND;
                 }
             case SELECT:
+                if (!db.tableExists(statement.tableName)) {
+                    return ExecuteResult.TABLE_NOT_FOUND;
+                }
                 List<Row> results = db.select(statement.tableName, statement.whereCondition);
                 for (Row row : results) {
                     System.out.println(formatRow(row, statement.columns));
                 }
                 return ExecuteResult.SUCCESS;
             case UPDATE:
+                if (!db.tableExists(statement.tableName)) {
+                    return ExecuteResult.TABLE_NOT_FOUND;
+                }
                 int updateCount = db.update(statement.tableName, statement.setValues, statement.whereCondition);
                 System.out.println("Updated " + updateCount + " row(s).");
                 return ExecuteResult.SUCCESS;
             case DELETE:
+                if (!db.tableExists(statement.tableName)) {
+                    return ExecuteResult.TABLE_NOT_FOUND;
+                }
                 int deleteCount = db.delete(statement.tableName, statement.whereCondition);
                 System.out.println("Deleted " + deleteCount + " row(s).");
                 return ExecuteResult.SUCCESS;
@@ -67,7 +79,7 @@ public class Executor {
                 } else if (col.equals("courseCode")) {
                     sb.append(row.courseCode);
                 } else {
-                    sb.append("?");
+                    throw new RuntimeException("Column not found: " + col);
                 }
                 if (i < columns.size() - 1) {
                     sb.append(", ");
