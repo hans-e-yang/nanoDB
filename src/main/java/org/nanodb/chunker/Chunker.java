@@ -5,11 +5,15 @@ import java.util.Optional;
 public abstract class Chunker {
     protected int chunkSize;
 
-    public Chunker(int chunkSize) {this.chunkSize = chunkSize;}
+    public Chunker(int chunkSize) {
+        if (chunkSize < 4096) chunkSize = 4096;
+        this.chunkSize = chunkSize;
+    }
     /**
+     * chunkSize will be at least 4kb, if given chunksize is < 4kb, it will be made into 4kb
      * Gets a fixed sized chunk based on its ID.
      * It is the responsibility of the caller to store the ID, except the initial ID.
-     * @param id The ID of the chunk.
+     * @param id The ID of the chunk. - Must be positive, negative ID will return an empty array
      * @throws InvalidChunkIdException ID of Chunk doesn't exist or is deleted
      * @return Contents of the chunk
      */
