@@ -39,4 +39,6 @@ public abstract class Db {
     // @param tableName the name of the table whose schema is to be retrieved
     // @return the StructType representing the schema of the specified table
     public abstract StructType getTableSchema(String tableName);
+
+    public boolean tableExists(String tableName) { return this.getTable(tableName) != null;}
 }

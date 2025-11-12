@@ -2,6 +2,7 @@ package org.nanodb.table;
 
 import org.nanodb.condition.Condition;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,5 +20,10 @@ public interface Table {
      int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction, int limit);
 
      void insert(List<Map<String, Object>> values);
+     default void insert(Map<String, Object> value) {
+         List<Map<String, Object>> values = new ArrayList<>();
+         values.add(value);
+         this.insert(values);
+     }
      void clear();
 }

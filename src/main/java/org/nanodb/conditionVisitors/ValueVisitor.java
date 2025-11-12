@@ -63,27 +63,7 @@ public class ValueVisitor implements ConditionVisitor {
         Class<?> expectedType = expectedValue.getClass();
         Class<?> actualType = expectedValue.getClass();
 
-        if (!expectedType.equals(Integer.class) || !expectedType.equals(String.class)) {
-            throw new InvalidColumnNameException("Incomplete column path. Column path should point to a value");
-        }
-        if (!actualType.equals(Integer.class) || !actualType.equals(String.class)) {
-            throw new InvalidColumnNameException("Incomplete comparison value, expected Integer or String, got " + actualType.getName());
-        }
-
-        if (!actualType.equals(expectedType)) {
-            throw new InvalidColumnDataTypeException("Cannot compare " + expectedType.getName() + " with " + actualType.getName());
-        }
-
-        return switch (comparisonCondition.getOp()) {
-            case ComparisonOperation.EQUAL -> actualValue.equals(expectedValue);
-            case ComparisonOperation.NOT_EQUALS -> !actualValue.equals(expectedValue);
-            case ComparisonOperation.GREATER_THAN -> compareValues(actualValue, expectedValue) > 0;
-            case ComparisonOperation.LESS_THAN -> compareValues(actualValue, expectedValue) < 0;
-            case ComparisonOperation.GREATER_EQUALS -> compareValues(actualValue, expectedValue) >= 0;
-            case ComparisonOperation.LESS_EQUALS -> compareValues(actualValue, expectedValue) <= 0;
-            case ComparisonOperation.LIKE -> actualValue.toString().contains(expectedValue.toString());
-            default -> throw new UnsupportedOperationException("Unsupported operation: " + comparisonCondition.getOp());
-        };
+        throw new InvalidColumnNameException("Incomplete column path. Column path should point to a value");
 
 
     }

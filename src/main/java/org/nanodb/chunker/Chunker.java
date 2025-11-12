@@ -25,10 +25,17 @@ public abstract class Chunker {
      * @return Contents of the chunk
      */
 
-    public abstract byte[] getInitialChunk();
+
+    public abstract int getInitialChunkId();
+    /**
+     * Returns the first ID to use
+     * @return The ID of the initial chunk
+     */
+
+    public byte[] getInitialChunk() {return getChunk(getInitialChunkId());};
     /**
      * Creates a new empty chunk
-     * @return The ID of the new chunk
+     * @return The Data of the initial chunk
      */
 
     public abstract int createNewChunk();

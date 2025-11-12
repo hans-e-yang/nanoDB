@@ -20,11 +20,16 @@ public class SimpleMapChunker extends Chunker {
     }
 
     @Override
+    public int getInitialChunkId() {
+        return 0;
+    }
+
+    @Override
     public byte[] getInitialChunk() {
-        if (nextId == 0) {
+        if (nextId == getInitialChunkId()) {
             createNewChunk();
         }
-        return getChunk(0); // This will return the initial chunk's data
+        return getChunk(getInitialChunkId()); // This will return the initial chunk's data
     }
 
     @Override

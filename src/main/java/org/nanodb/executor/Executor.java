@@ -23,7 +23,7 @@ public class Executor {
                     return ExecuteResult.ERROR;
                 }
             case DROP_TABLE:
-                if (!db.tableExists(statement.tableName)) {
+                if (db.tableExists(statement.tableName)) {
                     return ExecuteResult.TABLE_NOT_FOUND;
                 }
                 if (db.dropTable(statement.tableName)) {
@@ -43,16 +43,19 @@ public class Executor {
                 } catch (Exception e) {
                     return ExecuteResult.DATA_TYPE_MISMATCH;
                 }
-                if (db.insert(statement.tableName, parsedInsertValues)) {
-                    return ExecuteResult.SUCCESS;
-                } else {
-                    return ExecuteResult.DUPLICATE_KEY;
-                }
+                // We don't throw any errors in insert for now..
+                db.getTable(statement.tableName).insert(parsedInsertValues);
+                return ExecuteResult.SUCCESS;
+//                if (db.getTable(statement.tableName).insert(parsedInsertValues)) {
+//                    return ExecuteResult.SUCCESS;
+//                } else {
+//                    return ExecuteResult.DUPLICATE_KEY;
+//                }
             case SELECT:
                 if (!db.tableExists(statement.tableName)) {
                     return ExecuteResult.TABLE_NOT_FOUND;
                 }
-                List<Map<String, Object>> results = db.select(statement.tableName, statement.whereCondition);
+                List<Map<String, Object>> results = db.getTable(statement.tableName).select(statement.whereCondition);
                 for (Map<String, Object> row : results) {
                     System.out.println(formatRow(row, statement.columns));
                 }
@@ -69,14 +72,17 @@ public class Executor {
                 } catch (Exception e) {
                     return ExecuteResult.DATA_TYPE_MISMATCH;
                 }
-                int updateCount = db.update(statement.tableName, parsedUpdateValues, statement.whereCondition);
-                System.out.println("Updated " + updateCount + " row(s).");
-                return ExecuteResult.SUCCESS;
+                int updateCount = 0;
+                // DB is updated with a function.
+                throw new RuntimeException("UNIMPLEMENTED. SEE EXECUTOR.UPDATE");
+                //db.getTable(statement.tableName).update(parsedUpdateValues, statement.whereCondition);
+                //System.out.println("Updated " + updateCount + " row(s).");
+                //return ExecuteResult.SUCCESS;
             case DELETE:
                 if (!db.tableExists(statement.tableName)) {
                     return ExecuteResult.TABLE_NOT_FOUND;
                 }
-                int deleteCount = db.delete(statement.tableName, statement.whereCondition);
+                int deleteCount = db.getTable(statement.tableName).delete(statement.whereCondition);
                 System.out.println("Deleted " + deleteCount + " row(s).");
                 return ExecuteResult.SUCCESS;
             default:

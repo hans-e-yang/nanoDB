@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,5 +95,16 @@ public abstract class ChunkerTest {
         });
     }
 
+    @Test
+    public void testWriteAndRead() {
+        int chunkId = chunker.createNewChunk();
+        String message = "Hello World!";
+        chunker.updateChunk(chunkId, 0, message.getBytes(StandardCharsets.US_ASCII));
+
+        byte[] chunk = chunker.getChunk(chunkId);
+        String newMessage = new String(chunk, 0, message.length(), StandardCharsets.US_ASCII);
+
+        assertEquals(message, newMessage);
+    }
 
 }

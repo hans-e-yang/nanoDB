@@ -5,4 +5,5 @@ public class SimpleMapChunkerTest extends ChunkerTest {
     protected Chunker createChunker(int chunkSize) {
         return new SimpleMapChunker(chunkSize);
     }
+
 }
