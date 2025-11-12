@@ -1,10 +1,13 @@
 package org.nanodb.statement;
 
-import org.nanodb.db.Row;
-import org.nanodb.statement.condition.*;
+import org.nanodb.condition.*;
+import org.nanodb.primitives.*;
+import org.nanodb.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StatementParser {
 
@@ -12,31 +15,121 @@ public class StatementParser {
         String inputLower = input.trim().toLowerCase();
         input = input.trim();
         if (inputLower.startsWith("create table ")) {
+            // Parse: CREATE TABLE table_name (col1 TYPE, col2 TYPE, ...)
             statement.type = StatementType.CREATE_TABLE;
-            statement.tableName = input.substring(13).trim();
+            String rest = input.substring(13).trim();
+            
+            int openParen = rest.indexOf('(');
+            if (openParen == -1) {
+                // Simple CREATE TABLE without column definitions
+                statement.tableName = rest.trim();
+                return PrepareResult.SUCCESS;
+            }
+            
+            statement.tableName = rest.substring(0, openParen).trim();
+            
+            int closeParen = rest.lastIndexOf(')');
+            if (closeParen == -1) {
+                return PrepareResult.SYNTAX_ERROR;
+            }
+            
+            String columnsStr = rest.substring(openParen + 1, closeParen).trim();
+            String[] columnDefs = columnsStr.split(",");
+            
+            List<Pair<String, DataType<?>>> fields = new ArrayList<>();
+            
+            for (String columnDef : columnDefs) {
+                String[] parts = columnDef.trim().split("\\s+");
+                if (parts.length != 2) {
+                    return PrepareResult.SYNTAX_ERROR;
+                }
+                String columnName = parts[0].trim();
+                String columnType = parts[1].trim().toLowerCase();
+                
+                // Map type string to DataType instance
+                DataType<?> dataType;
+                
+                if (columnType.equals("int")) {
+                    dataType = new Int32Type();
+                } else if (columnType.startsWith("varchar(") && columnType.endsWith(")")) {
+                    // Parse varchar(length)
+                    String lengthStr = columnType.substring(8, columnType.length() - 1).trim();
+                    try {
+                        int length = Integer.parseInt(lengthStr);
+                        if (length <= 0) {
+                            return PrepareResult.SYNTAX_ERROR;
+                        }
+                        dataType = new VarCharType(length);
+                    } catch (NumberFormatException e) {
+                        return PrepareResult.SYNTAX_ERROR;
+                    }
+                } else if (columnType.equals("date")) {
+                    dataType = new DateType();
+                } else {
+                    return PrepareResult.SYNTAX_ERROR;
+                }
+                
+                fields.add(new Pair<>(columnName, dataType));
+            }
+            
+            statement.tableSchema = new StructType(fields);
+            
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("drop table ")) {
             statement.type = StatementType.DROP_TABLE;
             statement.tableName = input.substring(11).trim();
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("insert into ")) {
+            // Parse: INSERT INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
             String rest = input.substring(12).trim();
-            String[] parts = rest.split(" ");
-            if (parts.length < 4) return PrepareResult.SYNTAX_ERROR;
-            statement.tableName = parts[0];
-            try {
-                int id = Integer.parseInt(parts[1]);
-                if (id < 0) return PrepareResult.NEGATIVE_ID;
-                String courseName = parts[2];
-                if (courseName.length() > Row.COURSE_NAME_SIZE) return PrepareResult.STRING_TOO_LONG;
-                String courseCode = parts[3];
-                if (courseCode.length() > Row.COURSE_CODE_SIZE) return PrepareResult.STRING_TOO_LONG;
-                statement.rowToInsert = new Row(id, courseName, courseCode);
-                statement.type = StatementType.INSERT;
-                return PrepareResult.SUCCESS;
-            } catch (NumberFormatException e) {
+            
+            // Find table name (before opening parenthesis or VALUES)
+            int openParen = rest.indexOf('(');
+            int valuesIndex = rest.toLowerCase().indexOf("values");
+            
+            if (openParen == -1 || valuesIndex == -1) {
                 return PrepareResult.SYNTAX_ERROR;
             }
+            
+            statement.tableName = rest.substring(0, openParen).trim();
+            
+            // Extract column names
+            int closeParen = rest.indexOf(')', openParen);
+            if (closeParen == -1) {
+                return PrepareResult.SYNTAX_ERROR;
+            }
+            String columnsStr = rest.substring(openParen + 1, closeParen).trim();
+            String[] columns = columnsStr.split(",");
+            
+            // Extract values
+            String valuesStr = rest.substring(valuesIndex + 6).trim(); // Skip "values"
+            int valuesOpen = valuesStr.indexOf('(');
+            int valuesClose = valuesStr.indexOf(')');
+            if (valuesOpen == -1 || valuesClose == -1) {
+                return PrepareResult.SYNTAX_ERROR;
+            }
+            String valuesContent = valuesStr.substring(valuesOpen + 1, valuesClose).trim();
+            String[] values = valuesContent.split(",");
+            
+            if (columns.length != values.length) {
+                return PrepareResult.SYNTAX_ERROR;
+            }
+            
+            // Build the valuesToInsert map (keep as strings)
+            Map<String, String> valuesToInsert = new HashMap<>();
+            for (int i = 0; i < columns.length; i++) {
+                String col = columns[i].trim();
+                String val = values[i].trim();
+                // Remove quotes if present but keep as string
+                if (val.startsWith("'") && val.endsWith("'")) {
+                    val = val.substring(1, val.length() - 1);
+                }
+                valuesToInsert.put(col, val);
+            }
+            
+            statement.valuesToInsert = valuesToInsert;
+            statement.type = StatementType.INSERT;
+            return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("select ")) {
             int fromIndex = inputLower.indexOf(" from ");
             if (fromIndex == -1) return PrepareResult.SYNTAX_ERROR;
@@ -76,6 +169,7 @@ public class StatementParser {
                 if (kv.length != 2) return PrepareResult.SYNTAX_ERROR;
                 String col = kv[0].trim();
                 String val = kv[1].trim();
+                // Remove quotes if present but keep as string
                 if (val.startsWith("'") && val.endsWith("'")) {
                     val = val.substring(1, val.length() - 1);
                 }
@@ -127,20 +221,45 @@ public class StatementParser {
 
     private static Condition parseComp(String str) {
         str = str.trim();
-        String op = null;
+        ComparisonOperation op = null;
         int opIndex = -1;
-        if ((opIndex = str.indexOf('=')) > 0) {
-            op = "=";
+        
+        // Check for two-character operators first
+        if ((opIndex = str.indexOf(">=")) > 0) {
+            op = ComparisonOperation.GREATER_EQUALS;
+            opIndex = str.indexOf(">=");
+        } else if ((opIndex = str.indexOf("<=")) > 0) {
+            op = ComparisonOperation.LESS_EQUALS;
+            opIndex = str.indexOf("<=");
+        } else if ((opIndex = str.indexOf("!=")) > 0) {
+            op = ComparisonOperation.NOT_EQUALS;
+            opIndex = str.indexOf("!=");
+        } else if (str.toLowerCase().contains(" like ")) {
+            op = ComparisonOperation.LIKE;
+            opIndex = str.toLowerCase().indexOf(" like ");
+        } else if ((opIndex = str.indexOf('=')) > 0) {
+            op = ComparisonOperation.EQUAL;
         } else if ((opIndex = str.indexOf('>')) > 0) {
-            op = ">";
+            op = ComparisonOperation.GREATER_THAN;
         } else if ((opIndex = str.indexOf('<')) > 0) {
-            op = "<";
+            op = ComparisonOperation.LESS_THAN;
         }
-        if (opIndex == -1) {
+        
+        if (opIndex == -1 || op == null) {
             throw new RuntimeException("Invalid condition");
         }
+        
         String col = str.substring(0, opIndex).trim();
-        String val = str.substring(opIndex + 1).trim();
+        int valStart = opIndex;
+        if (op == ComparisonOperation.GREATER_EQUALS || op == ComparisonOperation.LESS_EQUALS || op == ComparisonOperation.NOT_EQUALS) {
+            valStart += 2;
+        } else if (op == ComparisonOperation.LIKE) {
+            valStart += 6; // " like ".length()
+        } else {
+            valStart += 1;
+        }
+        
+        String val = str.substring(valStart).trim();
         if (val.startsWith("'") && val.endsWith("'")) {
             val = val.substring(1, val.length() - 1);
         }

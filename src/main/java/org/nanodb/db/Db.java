@@ -1,7 +1,9 @@
 package org.nanodb.db;
 
 import org.nanodb.chunker.Chunker;
-import org.nanodb.statement.condition.Condition;
+import org.nanodb.condition.Condition;
+import org.nanodb.primitives.StructType;
+import org.nanodb.table.Table;
 
 import java.util.List;
 import java.util.Map;
@@ -14,13 +16,17 @@ public abstract class Db {
         this.chunker = chunker; 
     }
     
-    public abstract boolean createTable(String tableName);
+    public abstract boolean createTable(String tableName, StructType schema);
     public abstract boolean dropTable(String tableName);
-    public abstract boolean insert(String tableName, Row row);
-    public abstract List<Row> select(String tableName, Condition condition);
-    public abstract int delete(String tableName, Condition condition);
-    public abstract int update(String tableName, Map<String, String> setValues, Condition condition);
+
+//    public abstract boolean insert(String tableName, Map<String, Object> row);
+//    public abstract List<Map<String, Object>> select(String tableName, Condition condition);
+//    public abstract int delete(String tableName, Condition condition);
+//    public abstract int update(String tableName, Map<String, Object> setValues, Condition condition);
+    public abstract Table getTable(String tableName);
+
     public abstract boolean tableExists(String tableName);
+    public abstract StructType getTableSchema(String tableName);
 
     // Initializes the db, allocate space for metadata and such.
     public abstract void init();

@@ -1,7 +1,5 @@
 package org.nanodb.condition;
 
-import org.nanodb.db.Row;
-
 public class ComparisonCondition implements Condition {
     private String column;
     private ComparisonOperation op;

@@ -1,7 +1,5 @@
 package org.nanodb.condition;
 
-import org.nanodb.db.Row;
-
 public class OrCondition implements Condition {
     private Condition left;
     private Condition right;

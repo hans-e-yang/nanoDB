@@ -20,6 +20,15 @@ public class StructType implements DataType<Map<String, Object>> {
     }
 
     /**
+     * Gets the list of fields in this StructType.
+     *
+     * @return the list of field name and DataType pairs
+     */
+    public List<Pair<String, DataType<?>>> getFields() {
+        return fields;
+    }
+
+    /**
      * Converts a byte array into a Map representing the structured data.
      *
      * @param bytes  the byte array containing the data
