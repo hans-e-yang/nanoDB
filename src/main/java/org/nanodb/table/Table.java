@@ -8,16 +8,16 @@ import java.util.function.Function;
 
 public interface Table {
     // Returns all values that match the select statement
-    public List<Map<String, Object>> select(Condition condition);
-    public List<Map<String, Object>> select(Condition condition, int limit);
+     List<Map<String, Object>> select(Condition condition);
+     List<Map<String, Object>> select(Condition condition, int limit);
 
     // Returns the count of deleted rows
-    public int delete(Condition condition);
-    public int delete(Condition condition, int limit);
+     int delete(Condition condition);
+     int delete(Condition condition, int limit);
 
-    public void update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction);
-    public void update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction, int limit);
+     int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction);
+     int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction, int limit);
 
-    public void insert(List<Map<String, Object>> values);
-    public void clear();
+     void insert(List<Map<String, Object>> values);
+     void clear();
 }

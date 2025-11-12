@@ -1,13 +1,14 @@
 package org.nanodb.table;
 
 import org.nanodb.chunker.Chunker;
-import org.nanodb.condition.ComparisonCondition;
 import org.nanodb.condition.Condition;
 import org.nanodb.condition.ConditionVisitor;
 import org.nanodb.conditionVisitors.ValueVisitor;
 import org.nanodb.primitives.Int32Type;
 import org.nanodb.primitives.StructType;
+import org.nanodb.reader.Reader;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,38 +28,91 @@ import java.util.function.Function;
  *
  */
 public class LinkedListTable implements Table {
-    private Chunker chunker;
-    private int startingBlockId;
-    private int recordSize;
-    private StructType recordType;
+    private final Chunker chunker;
+    private final int startingBlockId;
+    private final StructType recordType;
 
-    public LinkedListTable(Chunker chunker, int startingBlockId, int recordSize, StructType recordType) {
+    private static class LinkedListNode {
+        private static final Int32Type int32 = new Int32Type();
+        private final int currentId;
+        private int nextPtr;
+        private final List<Map<String, Object>> records;
+
+        private final Chunker chunker;
+        private final StructType recordType;
+
+        public LinkedListNode(Chunker chunker, StructType recordType, int blockId) {
+            this.currentId = blockId;
+            this.chunker = chunker;
+            this.recordType = recordType;
+
+            byte[] chunk = chunker.getChunk(blockId);
+            Reader reader = new Reader(chunk);
+            nextPtr = reader.Read(int32);
+            int recordCount = reader.Read(int32);
+            records = new ArrayList<>();
+
+            for (int i = 0; i < recordCount; i++) {
+                records.add(reader.Read(recordType));
+            }
+        }
+
+        public LinkedListNode getNext() {
+            if (nextPtr < 0) {return null;}
+            return new LinkedListNode(chunker, recordType, nextPtr);
+        }
+
+        public List<Map<String, Object>> getRecords() {
+            return records;
+        }
+
+        public void updateNode(List<Map<String, Object>> newRecords) {
+            if (newRecords.size() * recordType.byteSize() + 2*int32.byteSize() > chunker.getChunkSize()) {
+                throw new IllegalArgumentException("Too many data to write in a single chunk!");
+            }
+
+            // Rewrite the current chunk
+            ByteBuffer data = ByteBuffer.allocate(chunker.getChunkSize())
+                    .put(int32.toBytes(this.nextPtr))
+                    .put(int32.toBytes(newRecords.size()));
+            for (Map<String, Object> row : newRecords) data.put(recordType.toBytes(row));
+            chunker.updateChunk(this.currentId, 0, data.array());
+        }
+
+        public LinkedListNode createNewNode() {
+            nextPtr = chunker.createNewChunk();
+            // Update the ptr in the underlying data
+            chunker.updateChunk(this.currentId, 0, int32.toBytes(nextPtr));
+            return getNext();
+        }
+
+        public void deleteNode() {
+            chunker.deleteChunk(this.currentId);
+        }
+
+        public int getCapacity() {
+            int usableSpace = chunker.getChunkSize() - (2 * int32.byteSize());
+            return usableSpace / recordType.byteSize();
+        }
+    }
+
+    public LinkedListTable(Chunker chunker, int startingBlockId, StructType recordType) {
         this.chunker = chunker;
         this.startingBlockId = startingBlockId;
-        this.recordSize = recordSize;
         this.recordType = recordType;
     }
 
-    public List<Map<String, Object>> select(ComparisonCondition condition) {
+    public List<Map<String, Object>> select(Condition condition) {
         return select(condition, Integer.MAX_VALUE);
     }
-    public List<Map<String, Object>> select(ComparisonCondition condition, int limit) {
+    public List<Map<String, Object>> select(Condition condition, int limit) {
         List<Map<String, Object>> results = new ArrayList<>();
 
-        byte[] chunk = chunker.getChunk(startingBlockId);
-        Int32Type int32 = new Int32Type();
+        LinkedListNode node = new LinkedListNode(this.chunker, this.recordType, this.startingBlockId);
 
         // Loop through all chunks
-        while (chunk.length != 0) {
-            int offset = 0;
-            Integer nextChunk = int32.fromBytes(chunk, 0);
-            Integer records = int32.fromBytes(chunk, int32.byteSize());
-            offset += int32.byteSize() * 2;
-
-            for (int i = 0; i < records; i++) {
-                Map<String, Object> row = recordType.fromBytes(chunk, offset);
-                offset += int32.byteSize() * 2;
-
+        while (node != null) {
+            for (Map<String, Object> row : node.getRecords()) {
                 // compare the row with the condition
                 ConditionVisitor comparer = new ValueVisitor(row);
                 if (condition.accept(comparer)) {
@@ -68,8 +122,7 @@ public class LinkedListTable implements Table {
                 // End the function early if hit limit
                 if (results.size() >= limit) return results;
             }
-
-            chunk = chunker.getChunk(nextChunk);
+            node = node.getNext();
         }
 
         return results;
@@ -80,22 +133,16 @@ public class LinkedListTable implements Table {
     public int delete(Condition condition, int limit) {
         int deleted = 0;
 
-        byte[] chunk = chunker.getChunk(startingBlockId);
-        Int32Type int32 = new Int32Type();
+        // Clean all nodes, but we do not deallocate them
+        // May change implementation later
+        LinkedListNode node = new LinkedListNode(this.chunker, this.recordType, this.startingBlockId);
 
         // Loop through all chunks
-        while (chunk.length != 0) {
+        while (node != null) {
             List<Map<String, Object>> kept = new ArrayList<>();
-            int offset = 0;
-            Integer nextChunk = int32.fromBytes(chunk, 0);
-            Integer records = int32.fromBytes(chunk, int32.byteSize());
-            offset += int32.byteSize() * 2;
 
             // Loop through all the rows
-            for (int i = 0; i < records; i++) {
-                Map<String, Object> row = recordType.fromBytes(chunk, offset);
-                offset += int32.byteSize() * 2;
-
+            for (Map<String, Object> row : node.getRecords()) {
                 // compare the row with the condition
                 ConditionVisitor comparer = new ValueVisitor(row);
                 if (condition.accept(comparer)) {
@@ -107,22 +154,95 @@ public class LinkedListTable implements Table {
                 if (deleted >= limit) break;
             }
 
-            // Rewrite the current chunk
-            byte[] data = int32
+            node.updateNode(kept);
+            node = node.getNext();
+        }
 
-            chunk = chunker.getChunk(nextChunk);
+        return deleted;
+    }
+
+
+    public int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction) {
+        return update(condition, updateFunction, Integer.MAX_VALUE);
+    }
+    public int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction, int limit) {
+        int updated = 0;
+
+        // Clean all nodes, but we do not deallocate them
+        // May change implementation later
+        LinkedListNode node = new LinkedListNode(this.chunker, this.recordType, this.startingBlockId);
+
+        // Loop through all chunks
+        while (node != null) {
+            List<Map<String, Object>> newRows = new ArrayList<>();
+
+            // Loop through all the rows
+            for (Map<String, Object> row : node.getRecords()) {
+                // compare the row with the condition
+                ConditionVisitor comparer = new ValueVisitor(row);
+                if (condition.accept(comparer)) {
+                    newRows.add(updateFunction.apply(row));
+                } else {
+                    newRows.add(row);
+                }
+
+                if (updated >= limit) break;
+            }
+
+            node.updateNode(newRows);
+            node = node.getNext();
+        }
+
+        return updated;
+    }
+
+    public void insert(List<Map<String, Object>> values) {
+        // Initialization
+        LinkedListNode node = new LinkedListNode(this.chunker, this.recordType, this.startingBlockId);
+        LinkedListNode lastNode = node;
+        int inserted = 0;
+
+        // Loop through all nodes while there are uninserted values
+        while (node != null && inserted < values.size()) {
+            // Get the records in the current node
+            List<Map<String, Object>> rows = node.getRecords();
+
+            // Fill them with values to be inserted
+            while (rows.size() < node.getCapacity() && inserted < values.size()) {
+                rows.add(values.get(inserted++));
+            }
+
+            // Update the node
+            node.updateNode(rows);
+
+            lastNode = node;
+            node = node.getNext();
+        }
+
+        // If we reached the end of the nodes, but not all values are inserted, we must create a new node
+        node = lastNode;
+        while (inserted < values.size()) {
+            node = node.createNewNode();
+
+            // Get the records in the current node
+            List<Map<String, Object>> rows = node.getRecords();
+
+            // Fill them with values to be inserted
+            while (rows.size() < node.getCapacity() && inserted < values.size()) {
+                rows.add(values.get(inserted++));
+            }
+
+            // Update the node
+            node.updateNode(rows);
         }
     }
 
-    public byte[] update(Function<Index, Boolean> indexFn, Function<byte[], Boolean> valFn, Function<byte[], byte[]> updateFn) {
-
-    }
-
-    public void insert(byte[] value) {
-
-    }
-
     public void clear() {
-
+        // Unlike delete, clear totally destroys all allocated chunks
+        LinkedListNode node = new LinkedListNode(this.chunker, this.recordType, this.startingBlockId);
+        while (node != null) {
+            node.deleteNode();
+            node = node.getNext();
+        }
     }
 }

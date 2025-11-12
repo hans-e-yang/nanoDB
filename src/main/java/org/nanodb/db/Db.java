@@ -21,4 +21,7 @@ public abstract class Db {
     public abstract int delete(String tableName, Condition condition);
     public abstract int update(String tableName, Map<String, String> setValues, Condition condition);
     public abstract boolean tableExists(String tableName);
+
+    // Initializes the db, allocate space for metadata and such.
+    public abstract void init();
 }

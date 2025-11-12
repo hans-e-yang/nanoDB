@@ -1,7 +1,5 @@
 package org.nanodb.chunker;
 
-import java.util.Optional;
-
 public abstract class Chunker {
     protected int chunkSize;
 
@@ -9,6 +7,8 @@ public abstract class Chunker {
         if (chunkSize < 4096) chunkSize = 4096;
         this.chunkSize = chunkSize;
     }
+
+    public int getChunkSize() {return chunkSize;}
     /**
      * chunkSize will be at least 4kb, if given chunksize is < 4kb, it will be made into 4kb
      * Gets a fixed sized chunk based on its ID.
