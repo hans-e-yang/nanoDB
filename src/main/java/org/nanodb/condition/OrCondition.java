@@ -9,6 +9,14 @@ public class OrCondition implements Condition {
         this.right = right;
     }
 
+    public Condition getLeft() {
+        return left;
+    }
+
+    public Condition getRight() {
+        return right;
+    }
+
     public boolean accept(ConditionVisitor visitor) {
         return this.left.accept(visitor) || this.right.accept(visitor);
     }
