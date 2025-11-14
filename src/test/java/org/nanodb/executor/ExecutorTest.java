@@ -1,18 +1,5 @@
 package org.nanodb.executor;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.nanodb.db.Db;
-import org.nanodb.db.Row;
-import org.nanodb.statement.Statement;
-import org.nanodb.statement.StatementType;
-import org.nanodb.statement.condition.Condition;
-
-import java.io.IOException;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Minimum test set for 100% Condition Coverage (CC), Decision Coverage (DC), and Branch Coverage (BC)
  * 

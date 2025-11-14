@@ -1,11 +1,5 @@
 package org.nanodb.statement;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.nanodb.db.Row;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Minimum test set for 100% Condition Coverage (CC), Decision Coverage (DC), and Branch Coverage (BC)
  */

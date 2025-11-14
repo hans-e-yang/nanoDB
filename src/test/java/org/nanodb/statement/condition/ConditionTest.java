@@ -1,7 +1,11 @@
 package org.nanodb.statement.condition;
 
 import org.junit.jupiter.api.Test;
-import org.nanodb.db.Row;
+import org.nanodb.backend.db.Row;
+import org.nanodb.frontend.cli.statement.condition.AndCondition;
+import org.nanodb.frontend.cli.statement.condition.ComparisonCondition;
+import org.nanodb.frontend.cli.statement.condition.Condition;
+import org.nanodb.frontend.cli.statement.condition.OrCondition;
 
 import static org.junit.jupiter.api.Assertions.*;
 

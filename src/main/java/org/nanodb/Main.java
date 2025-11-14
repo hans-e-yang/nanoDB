@@ -1,11 +1,6 @@
 package org.nanodb;
 
-import org.nanodb.db.*;
-import org.nanodb.statement.*;
-import org.nanodb.executor.*;
-
 import java.io.IOException;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException {
