@@ -1,6 +1,4 @@
-package org.nanodb.backend.reader;
-
-import org.nanodb.backend.primitives.DataType;
+package org.nanodb.backend.primitives;
 
 public class Reader {
     private final byte[] data;
@@ -9,7 +7,7 @@ public class Reader {
         this.data = data;
     }
 
-    public <T> T Read(DataType<T> type) {
+    public <T> T read(DataType<T> type) {
         if (this.offset + type.byteSize() > this.data.length) {
             throw new IllegalArgumentException("Invalid Reading beyond chunk");
         }

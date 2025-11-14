@@ -1,4 +1,4 @@
-package org.nanodb.backend.conditionVisitors;
+package org.nanodb.backend.condition.visitor;
 
 import org.nanodb.backend.condition.ComparisonCondition;
 import org.nanodb.backend.condition.ComparisonOperation;

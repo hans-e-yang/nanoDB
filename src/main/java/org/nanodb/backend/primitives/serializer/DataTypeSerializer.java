@@ -3,20 +3,22 @@ package org.nanodb.backend.primitives.serializer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.nanodb.backend.primitives.ArrayType;
-import org.nanodb.backend.primitives.DataType;
-import org.nanodb.backend.primitives.DataTypeVisitor;
-import org.nanodb.backend.primitives.DateType;
-import org.nanodb.backend.primitives.Int32Type;
-import org.nanodb.backend.primitives.StructType;
-import org.nanodb.backend.primitives.VarCharType;
-import org.nanodb.utils.ByteExtensions;
+import org.nanodb.backend.primitives.*;
 import org.nanodb.utils.Pair;
 
 /**
  * Serializes and Deserializes a DataType into a byte array representation.
  */
-public class DataTypeSerializer implements Serializer<byte[], Object> {
+public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
+    // Lazy singleton
+    private static DataTypeSerializer _instance = null;
+    public static DataTypeSerializer getInstance() {
+        if (_instance == null) _instance = new DataTypeSerializer();
+        return _instance;
+    }
+    private DataTypeSerializer(){}
+
+    // Enum to differentiate between different data types
     private enum DataTypeEnum {
         DateType("d"),
         VarCharType("v"),
@@ -45,127 +47,128 @@ public class DataTypeSerializer implements Serializer<byte[], Object> {
         }
     }
 
-    private static VarCharType charType = new VarCharType(1);
-    private static Int32Type int32Type = new Int32Type();
-    private static VarCharType columnNameType = new VarCharType(64);
+    // Useful types to keep forever
+    private static final VarCharType charType = new VarCharType(1);
+    private static final Int32Type int32Type = new Int32Type();
+    private static final VarCharType columnNameType = new VarCharType(64);
+
 
     private static class Deserializer implements DataTypeVisitor<byte[]> {
         public byte[] visit(DateType d) {
-            List<byte[]> data = new ArrayList<>();
+            Writer w = new Writer();
             // Insert data type
-            data.add(charType.toBytes(DataTypeEnum.DateType.getId()));
-            return ByteExtensions.concat(data);
+            w.write(charType, DataTypeEnum.DateType.getId());
+            return w.array();
         }
 
         public <T> byte[] visit(ArrayType<T> d) {
-            List<byte[]> data = new ArrayList<>();
+            Writer w = new Writer();
 
             // Insert data type
-            data.add(charType.toBytes(DataTypeEnum.ArrayType.getId()));
+            w.write(charType, DataTypeEnum.ArrayType.getId());
             // Insert size of the array
-            data.add(int32Type.toBytes(d.getLength()));
+            w.write(int32Type, d.getLength());
             // Insert type of the elements
-            data.add(d.getElementType().accept(this));
+            w.write(d.getElementType().accept(this));
 
-            return ByteExtensions.concat(data);
+            return w.array();
         }
 
         public byte[] visit(Int32Type d) {
-            List<byte[]> data = new ArrayList<>();
-            // Insert data type
-            data.add(charType.toBytes(DataTypeEnum.Int32Type.getId()));
-            return ByteExtensions.concat(data);
+            Writer w = new Writer();
+            w.write(charType, DataTypeEnum.Int32Type.getId());
+            return w.array();
         }
 
         public byte[] visit(VarCharType d) {
-            List<byte[]> data = new ArrayList<>();
+            Writer w = new Writer();
             // Insert data type
-            data.add(charType.toBytes(DataTypeEnum.VarCharType.getId()));
+            w.write(charType, DataTypeEnum.VarCharType.getId());
             // Insert max string length
-            data.add(int32Type.toBytes(d.getLength()));
-            return ByteExtensions.concat(data);
+            w.write(int32Type, d.getLength());
+            return w.array();
         }
 
         public byte[] visit(StructType d) {
-            List<byte[]> data = new ArrayList<>();
+            Writer w = new Writer();
             // Insert data type
-            data.add(charType.toBytes(DataTypeEnum.StructType.getId()));
+            w.write(charType, DataTypeEnum.StructType.getId());
+            // Insert column data count
+            w.write(int32Type, d.getFields().size());
             // Insert all the field and records in order
-            for (Pair<String, DataType<Object>> field : d.getFields()) {
-                data.add(columnNameType.toBytes(field.getKey()));
-                data.add(field.getValue().accept(this));
+            for (Pair<String, DataType<?>> field : d.getFields()) {
+                w.write(columnNameType, field.getKey());
+                w.write(field.getValue().accept(this));
             }
-            return ByteExtensions.concat(data);
+            return w.array();
         }
     }
 
     // Variable length parser/serializer
-    private class Serializer {
-        private byte[] data;
-        private int offset = 0;
+    private static class Serializer {
+        private final Reader reader;
         public Serializer(byte[] data) {
-            this.data = data;
+            this.reader = new Reader(data);
         }
-        public DataType<Object> parse() {
-            DataTypeEnum type = DataTypeEnum.fromString(
-                charType.fromBytes(data, this.offset)
-            );
-            this.offset += charType.byteSize();
-            DataType<Object> d;
-            d = switch (type) {
-                case DateType ->
-                case ArrayType ->
-                case Int32Type ->
-                case StructType ->
-                case VarCharType ->
-                default -> null;
-            }
 
-            return d;
+        public DataType<?> parse() {
+            DataTypeEnum type = DataTypeEnum.fromString(
+                    reader.read(charType)
+            );
+
+            return switch (type) {
+                case DateType -> parseDateType();
+                case ArrayType -> parseArrayType();
+                case Int32Type -> parseInt32Type();
+                case StructType -> parseStructType();
+                case VarCharType -> parseVarCharType();
+            };
         }
 
         public DateType parseDateType() {
-
+            return new DateType();
         }
 
-        public ArrayType<Object> parseDateType() {
-
+        public ArrayType<?> parseArrayType() {
+            Integer length = reader.read(int32Type);
+            DataType<?> type = parse();
+            return new ArrayType<>(type, length);
         }
 
-        public Int32Type parseDateType() {
-
+        public Int32Type parseInt32Type() {
+            return new Int32Type();
         }
 
-        public StructType parseDateType() {
-
+        public StructType parseStructType() {
+            Integer length = reader.read(int32Type);
+            List<Pair<String, DataType<?>>> fields = new ArrayList<>();
+            for (int i = 0; i < length; i++) {
+                fields.add(new Pair<>(
+                        reader.read(columnNameType),
+                        parse()
+                ));
+            }
+            return new StructType(fields);
         }
 
-        public VarCharType parseDateType() {
-
+        public VarCharType parseVarCharType() {
+            Integer length = reader.read(int32Type);
+            return new VarCharType(length);
         }
     }
 
-    private static Deserializer deserializer = new Deserializer();
-
+    private static final Deserializer deserializer = new Deserializer();
     /**
      * Deserializes a datatype into its byte representation,
      * Allowing storage of the datatype itself (Metadata)
      */
-    public byte[] deserialize(DataType<Object> type) {
+    @Override
+    public byte[] deserialize(DataType<?> type) {
         return type.accept(deserializer);
     }
 
-    /**
-     * @param value - Ignored, this function will only run on the type
-     */
     @Override
-    public byte[] deserialize(DataType<Object> type, Object value) {
-        return deserialize(type);
-    }
-
-    @Override
-    public DataType<Object> serialize(DataType<Object> type, String value) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'serialize'");
+    public DataType<?> serialize(byte[] value) {
+        return (new Serializer(value)).parse();
     }
 }

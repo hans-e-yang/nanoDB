@@ -3,13 +3,12 @@ package org.nanodb.backend.table;
 import org.nanodb.backend.chunker.Chunker;
 import org.nanodb.backend.condition.Condition;
 import org.nanodb.backend.condition.ConditionVisitor;
-import org.nanodb.backend.conditionVisitors.ValueVisitor;
+import org.nanodb.backend.condition.visitor.ValueVisitor;
 import org.nanodb.backend.primitives.Int32Type;
 import org.nanodb.backend.primitives.StructType;
-import org.nanodb.backend.reader.Reader;
+import org.nanodb.backend.primitives.Reader;
 import org.nanodb.utils.ByteExtensions;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,12 +48,12 @@ public class LinkedListTable implements Table {
 
             byte[] chunk = chunker.getChunk(blockId);
             Reader reader = new Reader(chunk);
-            nextPtr = reader.Read(int32);
-            int recordCount = reader.Read(int32);
+            nextPtr = reader.read(int32);
+            int recordCount = reader.read(int32);
             records = new ArrayList<>();
 
             for (int i = 0; i < recordCount; i++) {
-                records.add(reader.Read(recordType));
+                records.add(reader.read(recordType));
             }
         }
 
