@@ -1,4 +1,4 @@
-package org.nanodb.statement.condition;
+package org.nanodb.frontend.cli.statement.condition;
 
 import org.junit.jupiter.api.Test;
 import org.nanodb.backend.db.Row;

@@ -1,4 +1,4 @@
-package org.nanodb.executor;
+package org.nanodb.frontend.cli.executor;
 
 /**
  * Minimum test set for 100% Condition Coverage (CC), Decision Coverage (DC), and Branch Coverage (BC)
