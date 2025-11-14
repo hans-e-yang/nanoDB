@@ -9,6 +9,8 @@ public class VarCharType implements DataType<String> {
         this.length = length;
     }
 
+    public int getLength() {return length;}
+
     @Override
     public String fromBytes(byte[] bytes, int offset) {
         return new String(bytes, offset, length, StandardCharsets.UTF_8).trim(); // Convert bytes to String
@@ -33,4 +35,8 @@ public class VarCharType implements DataType<String> {
     public int byteSize() {
         return length; // Fixed size
     }
+
+
+    @Override
+    public <T> T accept(DataTypeVisitor<T> visitor) {return visitor.visit(this);}
 }

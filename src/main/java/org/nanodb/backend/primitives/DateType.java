@@ -36,4 +36,7 @@ public class DateType implements DataType<Date> {
     public int byteSize() {
         return 8; // 8 bytes for Date (timestamp as long)
     }
+
+    @Override
+    public <T> T accept(DataTypeVisitor<T> visitor) {return visitor.visit(this);}
 }

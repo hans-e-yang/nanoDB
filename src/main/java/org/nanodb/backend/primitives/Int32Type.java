@@ -23,4 +23,7 @@ public class Int32Type implements DataType<Integer> {
     public int byteSize() {
         return 4; // 4 bytes for Int32
     }
+
+    @Override
+    public <T> T accept(DataTypeVisitor<T> visitor) {return visitor.visit(this);}
 }

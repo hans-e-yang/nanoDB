@@ -7,6 +7,7 @@ import org.nanodb.backend.conditionVisitors.ValueVisitor;
 import org.nanodb.backend.primitives.Int32Type;
 import org.nanodb.backend.primitives.StructType;
 import org.nanodb.backend.reader.Reader;
+import org.nanodb.utils.ByteExtensions;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -72,11 +73,17 @@ public class LinkedListTable implements Table {
             }
 
             // Rewrite the current chunk
-            ByteBuffer data = ByteBuffer.allocate(chunker.getChunkSize())
-                    .put(int32.toBytes(this.nextPtr))
-                    .put(int32.toBytes(newRecords.size()));
-            for (Map<String, Object> row : newRecords) data.put(recordType.toBytes(row));
-            chunker.updateChunk(this.currentId, 0, data.array());
+            
+            List<byte[]> data = new ArrayList<>();
+            data.add(int32.toBytes(this.nextPtr));
+            data.add(int32.toBytes(newRecords.size()));
+            for (Map<String, Object> row : newRecords) data.add(recordType.toBytes(row));
+
+            chunker.updateChunk(
+                this.currentId, 
+                0, 
+                ByteExtensions.concat(data)
+            );
         }
 
         public LinkedListNode createNewNode() {

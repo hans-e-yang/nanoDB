@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.nanodb.utils.ByteExtensions;
+
 public class ArrayType<T> implements DataType<List<T>> {
     private final DataType<T> elementType;
     private final int length;
@@ -13,6 +15,9 @@ public class ArrayType<T> implements DataType<List<T>> {
         this.elementType = elementType;
         this.length = length;
     }
+
+    public DataType<T> getElementType() {return elementType;}
+    public int getLength() {return length;}
 
     @Override
     public List<T> fromBytes(byte[] bytes, int offset) {
@@ -26,21 +31,21 @@ public class ArrayType<T> implements DataType<List<T>> {
 
     @Override
     public byte[] toBytes(List<T> data) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        List<byte[]> bytes = new ArrayList<>();
 
-        try {
-            for (T element : data) {
-                byte[] bytes = elementType.toBytes(element);
-                outputStream.write(bytes);
-            }
-            return outputStream.toByteArray();
-        } catch (IOException e) {
-            return new byte[]{};
+        for (T element : data) {
+            byte[] elementData = elementType.toBytes(element);
+            bytes.add(elementData);
         }
+        return ByteExtensions.concat(bytes);
     }
 
     @Override
     public int byteSize() {
         return length * elementType.byteSize();
     }
+
+
+    @Override
+    public <T2> T2 accept(DataTypeVisitor<T2> visitor) {return visitor.visit(this);}
 }

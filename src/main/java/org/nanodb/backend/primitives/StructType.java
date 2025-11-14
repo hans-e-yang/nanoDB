@@ -8,14 +8,14 @@ import java.util.Map;
 
 
 public class StructType implements DataType<Map<String, Object>> {
-    private final List<Pair<String, DataType<?>>> fields;
+    private final List<Pair<String, DataType<Object>>> fields;
 
     /**
      * Constructs a StructType with the specified fields.
      *
      * @param fields a list of pairs containing field names and their corresponding DataTypes
      */
-    public StructType(List<Pair<String, DataType<?>>> fields) {
+    public StructType(List<Pair<String, DataType<Object>>> fields) {
         this.fields = fields;
     }
 
@@ -24,7 +24,7 @@ public class StructType implements DataType<Map<String, Object>> {
      *
      * @return the list of field name and DataType pairs
      */
-    public List<Pair<String, DataType<?>>> getFields() {
+    public List<Pair<String, DataType<Object>>> getFields() {
         return fields;
     }
 
@@ -41,7 +41,7 @@ public class StructType implements DataType<Map<String, Object>> {
         int currentOffset = offset;
 
         // Recursively call fromBytes into all fields
-        for (Pair<String, DataType<?>> field : fields) {
+        for (Pair<String, DataType<Object>> field : fields) {
             String fieldName = field.getKey();
             DataType<?> dataType = field.getValue();
             Object value = dataType.fromBytes(bytes, currentOffset);
@@ -63,9 +63,9 @@ public class StructType implements DataType<Map<String, Object>> {
         int currentOffset = 0;
 
         // Iterate through each field and convert the value to bytes
-        for (Pair<String, DataType<?>> field : fields) {
+        for (Pair<String, DataType<Object>> field : fields) {
             String fieldName = field.getKey();
-            DataType dataType = field.getValue();
+            DataType<Object> dataType = field.getValue();
             Object value = data.get(fieldName);
 
             try {
@@ -101,4 +101,9 @@ public class StructType implements DataType<Map<String, Object>> {
         }
         return size;
     }
+
+
+    @Override
+    public <T> T accept(DataTypeVisitor<T> visitor) {return visitor.visit(this);}
+
 }

@@ -5,4 +5,6 @@ public interface DataType<T> {
     T fromBytes(byte[] bytes, int offset);
     byte[] toBytes(T data);
     int byteSize();
+
+    <T2> T2 accept(DataTypeVisitor<T2> visitor);
 }
