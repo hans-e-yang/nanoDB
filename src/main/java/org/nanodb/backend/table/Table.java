@@ -1,6 +1,8 @@
 package org.nanodb.backend.table;
 
+import org.nanodb.backend.chunker.Chunker;
 import org.nanodb.backend.condition.Condition;
+import org.nanodb.backend.primitives.StructType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +10,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public interface Table {
-    // Returns all values that match the select statement
+     // Returns all values that match the select statement
      List<Map<String, Object>> select(Condition condition);
      List<Map<String, Object>> select(Condition condition, int limit);
 

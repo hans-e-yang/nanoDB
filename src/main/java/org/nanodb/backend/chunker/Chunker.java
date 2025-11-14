@@ -34,10 +34,9 @@ public abstract class Chunker {
 
     public byte[] getInitialChunk() {return getChunk(getInitialChunkId());};
     /**
-     * Creates a new empty chunk
+     * Creates a new empty chunk, initialized to zeroes
      * @return The Data of the initial chunk
      */
-
     public abstract int createNewChunk();
     /**
      * Deletes an existing chunk

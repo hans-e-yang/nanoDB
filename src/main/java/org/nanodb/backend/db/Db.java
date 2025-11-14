@@ -3,17 +3,18 @@ package org.nanodb.backend.db;
 import org.nanodb.backend.chunker.Chunker;
 import org.nanodb.backend.primitives.StructType;
 import org.nanodb.backend.table.Table;
+import org.nanodb.backend.tableFactory.TableFactory;
 
 // Should represent the data structure representing the database
 public abstract class Db {
-    protected Chunker chunker;
+    protected TableFactory tableFactory;
 
 
     // Constructor to initialize the database with a specified chunker.
     //
     // @param chunker the chunker used for handling data storage and management
-    public Db(Chunker chunker) { 
-        this.chunker = chunker; 
+    public Db(TableFactory factory) {
+        this.tableFactory = factory;
     }
 
     // Creates a new table in the database with the given name and schema.

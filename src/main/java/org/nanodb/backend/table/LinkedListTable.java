@@ -58,7 +58,7 @@ public class LinkedListTable implements Table {
         }
 
         public LinkedListNode getNext() {
-            if (nextPtr < 0) {return null;}
+            if (nextPtr <= 0) {return null;}
             return new LinkedListNode(chunker, recordType, nextPtr);
         }
 
@@ -96,6 +96,19 @@ public class LinkedListTable implements Table {
         }
     }
 
+    public LinkedListTable(Chunker chunker, StructType recordType) {
+        int newChunkId = chunker.createNewChunk();
+        this.chunker = chunker;
+        this.startingBlockId = newChunkId;
+        this.recordType = recordType;
+    }
+
+    /**
+     * Gets the table located at the starting block Id
+     * @param chunker
+     * @param startingBlockId
+     * @param recordType
+     */
     public LinkedListTable(Chunker chunker, int startingBlockId, StructType recordType) {
         this.chunker = chunker;
         this.startingBlockId = startingBlockId;
