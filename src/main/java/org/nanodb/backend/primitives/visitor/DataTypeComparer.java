@@ -47,7 +47,14 @@ public class DataTypeComparer implements DataTypeVisitor<Boolean> {
     public Boolean visit(VarCharType d) {
         if (!sameClass()) return Boolean.FALSE;
         VarCharType d2 = (VarCharType) type2;
-        return d.getLength() != d2.getLength();
+        return d.getLength() == d2.getLength();
+    }
+
+    @Override
+    public Boolean visit(BytesType d) {
+        if (!sameClass()) return Boolean.FALSE;
+        BytesType d2 = (BytesType) type2;
+        return d.getLength() == d2.getLength();
     }
 
     @Override

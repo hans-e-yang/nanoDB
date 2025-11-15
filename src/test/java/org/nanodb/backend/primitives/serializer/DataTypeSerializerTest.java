@@ -2,12 +2,13 @@ package org.nanodb.backend.primitives.serializer;
 
 import org.junit.jupiter.api.Test;
 import org.nanodb.backend.primitives.*;
+import org.nanodb.backend.primitives.visitor.DataTypeComparer;
 import org.nanodb.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DataTypeSerializerTest extends SerializerTest<byte[], DataType<?>> {
     @Override
@@ -15,12 +16,15 @@ public class DataTypeSerializerTest extends SerializerTest<byte[], DataType<?>> 
         return DataTypeSerializer.getInstance();
     }
 
-    // Specifically for this test, we need to define our own testDeserializedProperly
-    @Override
-    protected void testDeserializedProperly(DataType<?> d) {
 
-        assertEquals(true, true);
-        assertEquals(serializer.serialize(serializer.deserialize(d)), d);
+    // Specifically for this test, we need to define our own testDeserializedProperly
+    protected <T> DataType<T> testDeserializedProperly(DataType<T> d) {
+        DataType<T> serialized = (DataType<T>) serializer.serialize(serializer.deserialize(d));
+        assertTrue(DataTypeComparer.compare(
+                d,
+                serialized
+        ));
+        return d;
     }
 
     @Test
@@ -46,5 +50,9 @@ public class DataTypeSerializerTest extends SerializerTest<byte[], DataType<?>> 
         fields.add(new Pair<>("col 2", new VarCharType(5)));
         fields.add(new Pair<>("col 3", new ArrayType<>(new Int32Type(), 10)));
         testDeserializedProperly(new StructType(fields));
+    }
+    @Test
+    public void test_bytes(){
+        testDeserializedProperly(new BytesType(1000));
     }
 }

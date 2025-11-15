@@ -6,4 +6,5 @@ public interface DataTypeVisitor<T> {
     T visit(Int32Type d);
     T visit(VarCharType d);
     T visit(StructType d);
+    T visit(BytesType d);
 }

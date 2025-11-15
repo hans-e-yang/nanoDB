@@ -24,7 +24,8 @@ public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
         VarCharType("v"),
         Int32Type("i"),
         StructType("s"),
-        ArrayType("a");
+        ArrayType("a"),
+        BytesType("b");
 
         private final String id;
 
@@ -89,6 +90,15 @@ public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
             return w.array();
         }
 
+        public byte[] visit(BytesType d) {
+            Writer w = new Writer();
+            // Insert data type
+            w.write(charType, DataTypeEnum.BytesType.getId());
+            // Insert max string length
+            w.write(int32Type, d.getLength());
+            return w.array();
+        }
+
         public byte[] visit(StructType d) {
             Writer w = new Writer();
             // Insert data type
@@ -110,6 +120,9 @@ public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
         public Serializer(byte[] data) {
             this.reader = new Reader(data);
         }
+        public Serializer(byte[] data, int offset) {
+            this.reader = new Reader(data, offset);
+        }
 
         public DataType<?> parse() {
             DataTypeEnum type = DataTypeEnum.fromString(
@@ -122,6 +135,8 @@ public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
                 case Int32Type -> parseInt32Type();
                 case StructType -> parseStructType();
                 case VarCharType -> parseVarCharType();
+                case BytesType -> parseBytesType();
+                default -> throw new UnsupportedOperationException("Invalid Data Type!");
             };
         }
 
@@ -155,6 +170,11 @@ public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
             Integer length = reader.read(int32Type);
             return new VarCharType(length);
         }
+
+        public BytesType parseBytesType() {
+            Integer length = reader.read(int32Type);
+            return new BytesType(length);
+        }
     }
 
     private static final Deserializer deserializer = new Deserializer();
@@ -170,5 +190,9 @@ public class DataTypeSerializer implements Serializer<byte[], DataType<?>> {
     @Override
     public DataType<?> serialize(byte[] value) {
         return (new Serializer(value)).parse();
+    }
+
+    public DataType<?> serialize(byte[] value, int offset) {
+        return (new Serializer(value, offset)).parse();
     }
 }

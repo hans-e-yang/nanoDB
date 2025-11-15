@@ -27,7 +27,7 @@ import java.util.function.Function;
  * </ul>
  *
  */
-public class LinkedListTable implements Table {
+public class LinkedListTable extends Table {
     private final Chunker chunker;
     private final int startingBlockId;
     private final StructType recordType;
@@ -107,6 +107,16 @@ public class LinkedListTable implements Table {
         this.chunker = chunker;
         this.startingBlockId = newChunkId;
         this.recordType = recordType;
+    }
+
+    @Override
+    public int getInitialId() {
+        return startingBlockId;
+    }
+
+    @Override
+    public StructType getSchema() {
+        return recordType;
     }
 
     /**

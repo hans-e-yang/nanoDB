@@ -6,6 +6,7 @@ import org.nanodb.backend.table.Table;
 import org.nanodb.backend.tableFactory.TableFactory;
 
 // Should represent the data structure representing the database
+// Better errors may need to be implemented
 public abstract class Db {
     protected TableFactory tableFactory;
 
@@ -32,7 +33,7 @@ public abstract class Db {
     // Retrieves the table object for the specified table name.
     //
     // @param tableName the name of the table to retrieve
-    // @return the Table object representing the specified table
+    // @return the Table object representing the specified table or null if it doesn't exist
     public abstract Table getTable(String tableName);
 
     // Retrieves the schema of the specified table.
