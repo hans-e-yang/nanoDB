@@ -9,10 +9,7 @@ import org.nanodb.utils.Table;
 import org.nanodb.internal.tableFactory.TableFactory;
 import org.nanodb.utils.Pair;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Database extends Db {
     private final Map<String, InternalTable> tables = new HashMap<>();
@@ -71,7 +68,7 @@ public class Database extends Db {
 
     @Override
     public boolean dropTable(String tableName) {
-        if (tables.containsKey(tableName)) return false;
+        if (!tables.containsKey(tableName)) return false;
         // clear table
         InternalTable table = this.tables.get(tableName);
         table.clear();
@@ -91,8 +88,8 @@ public class Database extends Db {
     }
 
     @Override
-    public String[] getAllTables() {
-        return (String[]) this.tables.keySet().toArray();
+    public List<String> getAllTables() {
+        return this.tables.keySet().stream().toList();
     }
 
     @Override

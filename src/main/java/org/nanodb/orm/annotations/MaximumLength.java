@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface MaximumLength {
     int DEFAULT_LENGTH = 64;
-    int maxLength() default 64;
+    int value() default 64;
 }

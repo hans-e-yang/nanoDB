@@ -62,7 +62,7 @@ public class NanoDb {
             // DROP TABLE IF SCHEMA IS DIFFERENT
             if (db.tableExists(tableName) && !DataTypeComparer.compare(dataType, db.getTableSchema(tableName))) db.dropTable(tableName);
 
-            if (!db.tableExists(field.getName())) db.createTable(field.getName(), dataType);
+            if (!db.tableExists(tableName)) db.createTable(field.getName(), dataType);
 
             // Get the tables, and push to the Table<T> wrappers, to check the individual fields
             field.setAccessible(true);

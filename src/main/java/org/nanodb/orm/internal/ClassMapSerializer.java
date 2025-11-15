@@ -54,9 +54,10 @@ public class ClassMapSerializer<T extends BaseModel> implements Serializer<Map<S
                 }
             }
             return instance;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Error: BaseModel classes must have an empty constructor!");
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e);
         }
     }
 }

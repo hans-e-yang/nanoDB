@@ -5,11 +5,12 @@ import org.nanodb.internal.table.InternalTable;
 import org.nanodb.utils.Table;
 import org.nanodb.internal.tableFactory.TableFactory;
 
+import java.util.List;
+
 // Should represent the data structure representing the database
 // Better errors may need to be implemented
 public abstract class Db {
     protected TableFactory tableFactory;
-
 
     // Constructor to initialize the database with a specified chunker.
     //
@@ -37,7 +38,7 @@ public abstract class Db {
     public abstract InternalTable getTable(String tableName);
 
     // Retrieves all table names in the db
-    public abstract String[] getAllTables();
+    public abstract List<String> getAllTables();
 
     // Retrieves the schema of the specified table.
     //

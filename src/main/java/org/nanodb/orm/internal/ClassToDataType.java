@@ -21,7 +21,7 @@ public class ClassToDataType {
                 .filter(a -> a instanceof MaximumLength)
                 .findFirst()
                 .orElse(null);
-        return annotation != null ? annotation.maxLength() : otherwise;
+        return annotation != null ? annotation.value() : otherwise;
     }
 
 
@@ -64,12 +64,18 @@ public class ClassToDataType {
         List<Pair<String, DataType<?>>> fields = new ArrayList<>();
 
         // Sort the fields to have a predictable order
-        Field[] objFields = (Field[]) Arrays.stream(objClass.getFields()).sorted(FieldComparator.instance).toArray();
+         List<Field> fieldList = Arrays.stream(objClass.getDeclaredFields())
+                .sorted(FieldComparator.instance)
+                 .toList();
+
+         if (fieldList.size() == 0) throw new UnsupportedOperationException(
+                 "Model must have at least one field!"
+         );
 
         // If the type of the field is a subtype, or equal to String
-        for (Field field : objFields) {
+        for (Field field : fieldList) {
             fields.add(
-                    new Pair<>(field.getName(), getDataTypeFromField(field.getType(), field.getAnnotations()))
+                    new Pair<>(field.getName(), getDataTypeFromField(field.getGenericType(), field.getAnnotations()))
             );
         }
 
