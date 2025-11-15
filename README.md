@@ -1,61 +1,33 @@
 A basic database implementation in Java
-# Code Architecture
-The code will be seperated into the 'frontend' and 'backend'
-Frontend: Code that interacts with user, either through CLI or by exposing a facade pattern for a better DX
-Backend: Actual code that implements the DB
+
+## Architecture
+The code is seperated into the backend system and frontend interface. 
+
+The backend system does the heavy lifting of the DB functionality, managing CRUD operations of tables and data into file or memory. 
+
+Meanwhile, the frontend provides a user friendly interface. This project has 2 interfaces, an executable with an SQL-like syntax, and a Java ORM library which Java developers can use directly on their code
 
 ## Backend
--- Still planning --
+The main backbone of the system consists of the interfaces: DB, Table, and Chunker. 
+Each of this classes handle the CRUD operations of increasingly abstract data. 
 
-DB: 
-  - Primitive DB functions
-    - select(String tablename, String[] rows, Condition conditions)
-    - insert
-    - delete
-    - ...
-    - create table
-    - drop table
-  - This layer will understand the types of the  
+DB: Mainly concerns on the storage of Table definitions and pointers to the tables. 
+
+Tables: Manages the CRUD of rows, serializing it into bytes and feeding it into the next layer down
+
+Chunker: Interfaces with the underlying storage (memory/file), providing methods to read and write chunks of bytes from it.
+
+## Additional important components
+To achieve its functionality, the Table class uses 2 crucial components:
+
+1. DataType interface: Represents the data types that are supported by the DB. Implementations should contain functions to serialize and deserialize between bytes (`byte[]`) and the Java Objects they represent.
+    - They also support visitors, allowing extensions of functionality.
+    - Interestingly, one of the visitors is used to serialize and deserialize the DataType object themselves, which is useful for the Database class implementation.
     
-
-B-Tree Manager (Name to be determined): Represents multiple tables (The runtime that maps variable names ('table names') into values ('the datastructures that represent the table'))
-  - Maps table name into the table itself
-  - I think this is the lowest level that we can consider as the db, we give DB as a facade? for a more `SQL` like interface.)
-  - In this interface, the types of the tables are unknown, so we return values as `byte[][]` where each record is a `byte[]`.
-      - However, it must know how long one record is
-  
-
-B-Tree: Represents one table (The data structure)
-
-Chunker: Acts like the malloc of our DB, it assigns chunks of 4kbs into datastructures that requests it.
-  - We can also implement caching in this layer
-
-## How the database will be stored in the file
-Assume file db.db, split into 4kb chunks
-Chunker will handle mapping ID into the chunks
-```
-|    Chunk 1         |   Chunk 2            |    Chunk 3          |
-+--------------------+----------------------+---------------------+-----
-|                    |                      |                     |
-+--------------------+----------------------+---------------------+-----
-```
-B-tree will manage on the chunk level, each chunk will have some metadata for the b-tree, such as:
-- Initialized: boolean
-- isLeaf: boolean
-The rest of the chunk will be reserved for data or indexes
-```
-+------------------------------------------+
-| Initialized | isLeaf | Data              |
-+------------------------------------------+
-```
-Each b-tree will need to know the key and the size of each record, then, it can create the indexes of `(previous_key, chunk_id)[]`
-
-B-tree Manager will store metadata on the names of each b-trees, by creating a b-tree in the first chunk itself.
-So there will be one b-tree dedicated to keep the metadata.
-Each record will be `(String tablename, int table_metadata_id, int table_data_id)`
-- table_metadata_id will point to a chunk that holds the table metadata for upper layers to use (namely to store column definitions)
-- table_data_id will point to the root of the b-tree that represents the table
-
+2. Condition interface: Represents a boolean expression as a Tree. Visitor pattern is used to evaluate the overall boolean expression.
+  - This enables flexibility to interpret the expression differently when comparing values vs comparing indexes. Note that indexes have not been implemented, but using visitor pattern here greatly eases the process.
+  - Originally, the design was planned to accept functions of `Function<Row, boolean>`, similar to that of .NET's Entity Framework. However, it would be difficult to evaluate indexes this way. It seems EF manages this by accessing the AST generated from the code itself, which seems out of scope for this project. If, by any chance, this feature would like to be added, it most likely would be implemented on the frontend interface, which will translate the Java AST into the backend Condition object boolean expression tree.
+    
 
 ### Acknowledgements
 - Structure inspired by <https://cstack.github.io/db_tutorial/>
