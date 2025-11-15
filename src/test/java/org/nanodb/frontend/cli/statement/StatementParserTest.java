@@ -2,7 +2,11 @@ package org.nanodb.frontend.cli.statement;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.nanodb.backend.primitives.DateType;
+import org.nanodb.cli.statement.PrepareResult;
+import org.nanodb.cli.statement.Statement;
+import org.nanodb.cli.statement.StatementParser;
+import org.nanodb.cli.statement.StatementType;
+import org.nanodb.internal.primitives.DateType;
 
 import static org.junit.jupiter.api.Assertions.*;
 
