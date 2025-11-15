@@ -32,8 +32,8 @@ To achieve its functionality, the Table class uses 2 crucial components:
     - Interestingly, one of the visitors is used to serialize and deserialize the DataType object themselves, which is useful for the Database class implementation.
     
 2. Condition interface: Represents a boolean expression as a Tree. Visitor pattern is used to evaluate the overall boolean expression.
-  - This enables flexibility to interpret the expression differently when comparing values vs comparing indexes. Note that indexes have not been implemented, but using visitor pattern here greatly eases the process.
-  - Originally, the design was planned to accept functions of `Function<Row, boolean>`, similar to that of .NET's Entity Framework. However, it would be difficult to evaluate indexes this way. It seems EF manages this by accessing the AST generated from the code itself, which seems out of scope for this project. If, by any chance, this feature would like to be added, it most likely would be implemented on the frontend interface, which will translate the Java AST into the backend Condition object boolean expression tree.
+   - This enables flexibility to interpret the expression differently when comparing values vs comparing indexes. Note that indexes have not been implemented, but using visitor pattern here greatly eases the process.
+   - Originally, the design was planned to accept functions of `Function<Row, boolean>` as the `WHERE` clause, similar to that of .NET's Entity Framework. However, it would be difficult to evaluate indexes this way. It seems EF manages this by accessing the AST generated from the code itself, which seems out of scope for this project. If, by any chance, this feature would like to be added, it most likely would be implemented on the frontend interface, which will translate the Java AST into the backend Condition object boolean expression tree.
     
 
 ### Acknowledgements
