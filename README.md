@@ -1,4 +1,4 @@
-A basic database implementation in Java
+A basic database that supports CRUD operations of Structs as Rows, written in Java. 
 
 ## Architecture
 The code is seperated into the backend system and frontend interface. 
@@ -16,6 +16,13 @@ DB: Mainly concerns on the storage of Table definitions and pointers to the tabl
 Tables: Manages the CRUD of rows, serializing it into bytes and feeding it into the next layer down
 
 Chunker: Interfaces with the underlying storage (memory/file), providing methods to read and write chunks of bytes from it.
+
+We could also make an analogy of this system into code. 
+Chunker acts as the malloc
+
+Table acts as a Vector/Collection object
+
+DB acts as the Lexical Environment and holds the mappings of Table name, type, and object, contained inside the environment (whatever environment the chunker is interacting with) 
 
 ## Additional important components
 To achieve its functionality, the Table class uses 2 crucial components:
