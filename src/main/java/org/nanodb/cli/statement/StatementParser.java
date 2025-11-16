@@ -136,7 +136,23 @@ public class StatementParser {
             String columnsStr = input.substring(7, fromIndex).trim();
             String rest = input.substring(fromIndex + 6).trim();
             String[] whereParts = rest.split("(?i) where ");
-            statement.tableName = whereParts[0].trim();
+            
+            // Check for LIMIT clause
+            String tableAndLimit = whereParts[0].trim();
+            String[] limitParts = tableAndLimit.split("(?i) limit ");
+            statement.tableName = limitParts[0].trim();
+            
+            if (limitParts.length > 1) {
+                try {
+                    statement.limit = Integer.parseInt(limitParts[1].trim());
+                    if (statement.limit < 0) {
+                        return PrepareResult.SYNTAX_ERROR;
+                    }
+                } catch (NumberFormatException e) {
+                    return PrepareResult.SYNTAX_ERROR;
+                }
+            }
+            
             statement.type = StatementType.SELECT;
             if (columnsStr.equals("*")) {
                 statement.columns = null; // null means all
@@ -149,10 +165,23 @@ public class StatementParser {
                 statement.columns = colList;
             }
             if (whereParts.length > 1) {
+                // Parse WHERE clause - may contain LIMIT
+                String whereClause = whereParts[1];
+                String[] whereLimitParts = whereClause.split("(?i) limit ");
                 try {
-                    statement.whereCondition = parseWhere(whereParts[1]);
+                    statement.whereCondition = parseWhere(whereLimitParts[0]);
                 } catch (Exception e) {
                     return PrepareResult.SYNTAX_ERROR;
+                }
+                if (whereLimitParts.length > 1) {
+                    try {
+                        statement.limit = Integer.parseInt(whereLimitParts[1].trim());
+                        if (statement.limit < 0) {
+                            return PrepareResult.SYNTAX_ERROR;
+                        }
+                    } catch (NumberFormatException e) {
+                        return PrepareResult.SYNTAX_ERROR;
+                    }
                 }
             }
             return PrepareResult.SUCCESS;
@@ -177,23 +206,65 @@ public class StatementParser {
             }
             statement.type = StatementType.UPDATE;
             if (whereParts.length > 1) {
+                // Parse WHERE clause - may contain LIMIT
+                String whereClause = whereParts[1];
+                String[] whereLimitParts = whereClause.split("(?i) limit ");
                 try {
-                    statement.whereCondition = parseWhere(whereParts[1]);
+                    statement.whereCondition = parseWhere(whereLimitParts[0]);
                 } catch (Exception e) {
                     return PrepareResult.SYNTAX_ERROR;
+                }
+                if (whereLimitParts.length > 1) {
+                    try {
+                        statement.limit = Integer.parseInt(whereLimitParts[1].trim());
+                        if (statement.limit < 0) {
+                            return PrepareResult.SYNTAX_ERROR;
+                        }
+                    } catch (NumberFormatException e) {
+                        return PrepareResult.SYNTAX_ERROR;
+                    }
                 }
             }
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("delete from ")) {
             String[] whereParts = input.split("(?i) where ");
             String deletePart = whereParts[0];
-            statement.tableName = deletePart.substring(12).trim();
+            
+            // Check for LIMIT clause in DELETE without WHERE
+            String tableAndLimit = deletePart.substring(12).trim();
+            String[] limitParts = tableAndLimit.split("(?i) limit ");
+            statement.tableName = limitParts[0].trim();
+            
+            if (limitParts.length > 1) {
+                try {
+                    statement.limit = Integer.parseInt(limitParts[1].trim());
+                    if (statement.limit < 0) {
+                        return PrepareResult.SYNTAX_ERROR;
+                    }
+                } catch (NumberFormatException e) {
+                    return PrepareResult.SYNTAX_ERROR;
+                }
+            }
+            
             statement.type = StatementType.DELETE;
             if (whereParts.length > 1) {
+                // Parse WHERE clause - may contain LIMIT
+                String whereClause = whereParts[1];
+                String[] whereLimitParts = whereClause.split("(?i) limit ");
                 try {
-                    statement.whereCondition = parseWhere(whereParts[1]);
+                    statement.whereCondition = parseWhere(whereLimitParts[0]);
                 } catch (Exception e) {
                     return PrepareResult.SYNTAX_ERROR;
+                }
+                if (whereLimitParts.length > 1) {
+                    try {
+                        statement.limit = Integer.parseInt(whereLimitParts[1].trim());
+                        if (statement.limit < 0) {
+                            return PrepareResult.SYNTAX_ERROR;
+                        }
+                    } catch (NumberFormatException e) {
+                        return PrepareResult.SYNTAX_ERROR;
+                    }
                 }
             }
             return PrepareResult.SUCCESS;

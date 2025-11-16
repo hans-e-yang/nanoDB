@@ -15,4 +15,5 @@ public class Statement {
     public List<String> columns;
     public Map<String, String> valuesToInsert = new HashMap<>();
     public StructType tableSchema;
+    public int limit = Integer.MAX_VALUE;
 }

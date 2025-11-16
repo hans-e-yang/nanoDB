@@ -566,4 +566,119 @@ public class StatementParserTest {
         PrepareResult result = StatementParser.prepareStatement("invalid statement", statement);
         assertEquals(PrepareResult.UNRECOGNIZED_STATEMENT, result);
     }
+
+    // ==================== LIMIT Tests ====================
+
+    @Test
+    public void testSelect_WithLimit() {
+        // Test SELECT with LIMIT clause
+        PrepareResult result = StatementParser.prepareStatement("select * from courses limit 10", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.SELECT, statement.type);
+        assertEquals("courses", statement.tableName);
+        assertEquals(10, statement.limit);
+    }
+
+    @Test
+    public void testSelect_WithWhereAndLimit() {
+        // Test SELECT with WHERE and LIMIT clauses
+        PrepareResult result = StatementParser.prepareStatement("select * from courses where id > 5 limit 3", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.SELECT, statement.type);
+        assertNotNull(statement.whereCondition);
+        assertEquals(3, statement.limit);
+    }
+
+    @Test
+    public void testSelect_WithColumnsAndLimit() {
+        // Test SELECT with specific columns and LIMIT
+        PrepareResult result = StatementParser.prepareStatement("select id, courseName from courses limit 5", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(2, statement.columns.size());
+        assertEquals(5, statement.limit);
+    }
+
+    @Test
+    public void testSelect_WithAllClausesAndLimit() {
+        // Test SELECT with columns, WHERE, and LIMIT
+        PrepareResult result = StatementParser.prepareStatement("select id, courseName from courses where id > 0 limit 20", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(2, statement.columns.size());
+        assertNotNull(statement.whereCondition);
+        assertEquals(20, statement.limit);
+    }
+
+    @Test
+    public void testSelect_LimitNegative() {
+        // Negative LIMIT not allowed
+        PrepareResult result = StatementParser.prepareStatement("select * from courses limit -5", statement);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
+
+    @Test
+    public void testSelect_LimitInvalidNumber() {
+        // Non-numeric LIMIT value
+        PrepareResult result = StatementParser.prepareStatement("select * from courses limit abc", statement);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
+
+    @Test
+    public void testUpdate_WithLimit() {
+        // Test UPDATE with LIMIT clause
+        PrepareResult result = StatementParser.prepareStatement("update courses set courseName = NewName where id > 10 limit 5", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.UPDATE, statement.type);
+        assertEquals("courses", statement.tableName);
+        assertEquals("NewName", statement.setValues.get("courseName"));
+        assertNotNull(statement.whereCondition);
+        assertEquals(5, statement.limit);
+    }
+
+    @Test
+    public void testUpdate_LimitNegative() {
+        // Negative LIMIT not allowed for UPDATE
+        PrepareResult result = StatementParser.prepareStatement("update courses set courseName = NewName where id > 0 limit -1", statement);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
+
+    @Test
+    public void testUpdate_LimitInvalidNumber() {
+        // Non-numeric LIMIT value for UPDATE
+        PrepareResult result = StatementParser.prepareStatement("update courses set courseName = NewName where id > 0 limit xyz", statement);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
+
+    @Test
+    public void testDelete_WithLimit() {
+        // Test DELETE with LIMIT clause
+        PrepareResult result = StatementParser.prepareStatement("delete from courses limit 10", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.DELETE, statement.type);
+        assertEquals("courses", statement.tableName);
+        assertEquals(10, statement.limit);
+    }
+
+    @Test
+    public void testDelete_WithWhereAndLimit() {
+        // Test DELETE with WHERE and LIMIT clauses
+        PrepareResult result = StatementParser.prepareStatement("delete from courses where status = old limit 3", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.DELETE, statement.type);
+        assertNotNull(statement.whereCondition);
+        assertEquals(3, statement.limit);
+    }
+
+    @Test
+    public void testDelete_LimitNegative() {
+        // Negative LIMIT not allowed for DELETE
+        PrepareResult result = StatementParser.prepareStatement("delete from courses limit -5", statement);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
+
+    @Test
+    public void testDelete_LimitInvalidNumber() {
+        // Non-numeric LIMIT value for DELETE
+        PrepareResult result = StatementParser.prepareStatement("delete from courses limit bad", statement);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
 }
