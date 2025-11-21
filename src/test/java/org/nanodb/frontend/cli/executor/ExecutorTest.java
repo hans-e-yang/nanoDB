@@ -1,420 +1,400 @@
 package org.nanodb.frontend.cli.executor;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.nanodb.cli.executor.ExecuteResult;
+import org.nanodb.cli.executor.Executor;
+import org.nanodb.cli.statement.Statement;
+import org.nanodb.cli.statement.StatementType;
+import org.nanodb.internal.chunker.FileChunker;
+import org.nanodb.internal.condition.ComparisonCondition;
+import org.nanodb.internal.condition.ComparisonOperation;
+import org.nanodb.internal.db.Database;
+import org.nanodb.internal.db.Db;
+import org.nanodb.internal.primitives.*;
+import org.nanodb.internal.tableFactory.LinkedListTableFactory;
+import org.nanodb.utils.Pair;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Path;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
- * Minimum test set for 100% Condition Coverage (CC), Decision Coverage (DC), and Branch Coverage (BC)
- * 
- * Coverage Analysis:
- * 
- * Executor.execute():
- * - Decision 1: switch(statement.type) - CREATE_TABLE, DROP_TABLE, INSERT, SELECT, UPDATE, DELETE branches
- * 
- * CREATE_TABLE branch:
- * - Decision 2: db.createTable() returns true/false - needs T/F
- * 
- * DROP_TABLE branch:
- * - Decision 3: !db.tableExists() - needs T/F
- * - Decision 4: db.dropTable() returns true/false - needs T/F
- * 
- * INSERT branch:
- * - Decision 5: !db.tableExists() - needs T/F
- * - Decision 6: db.insert() returns true/false - needs T/F
- * 
- * SELECT branch:
- * - Decision 7: !db.tableExists() - needs T/F
- * - Decision 8: statement.columns == null - needs T/F
- * - Decision 9: statement.columns.isEmpty() - needs T/F
- * - Decision 10: for loop iteration over columns - needs empty and non-empty
- * - Decision 11: switch(column) - "id", "courseName", "courseCode", default branches
- * - Decision 12: for loop iteration over rows - needs empty and non-empty
- * 
- * UPDATE branch:
- * - Decision 13: !db.tableExists() - needs T/F
- * 
- * DELETE branch:
- * - Decision 14: !db.tableExists() - needs T/F
- * 
- * Minimum test cases: 24 tests
+ * Test suite for Executor
+ * Tests all statement types: CREATE_TABLE, DROP_TABLE, INSERT, SELECT, UPDATE, DELETE
+ * with various conditions including LIMIT functionality
  */
 public class ExecutorTest {
-//    private static class StubDb extends Db {
-//        private boolean createTableResult;
-//        private boolean dropTableResult;
-//        private boolean insertResult;
-//        private List<Row> selectResult;
-//        private int updateResult;
-//        private int deleteResult;
-//        private boolean tableExists;
-//
-//        public StubDb() {
-//            super(null);
-//            this.selectResult = new ArrayList<>();
-//        }
-//
-//        @Override
-//        public boolean createTable(String tableName) {
-//            return createTableResult;
-//        }
-//
-//        @Override
-//        public boolean dropTable(String tableName) {
-//            return dropTableResult;
-//        }
-//
-//        @Override
-//        public boolean insert(String tableName, Row row) {
-//            return insertResult;
-//        }
-//
-//        @Override
-//        public List<Row> select(String tableName, Condition condition) {
-//            return selectResult;
-//        }
-//
-//        @Override
-//        public int delete(String tableName, Condition condition) {
-//            return deleteResult;
-//        }
-//
-//        @Override
-//        public int update(String tableName, Map<String, String> setValues, Condition condition) {
-//            return updateResult;
-//        }
-//
-//        @Override
-//        public boolean tableExists(String tableName) {
-//            return tableExists;
-//        }
-//
-//        public void setCreateTableResult(boolean result) {
-//            this.createTableResult = result;
-//        }
-//
-//        public void setDropTableResult(boolean result) {
-//            this.dropTableResult = result;
-//        }
-//
-//        public void setInsertResult(boolean result) {
-//            this.insertResult = result;
-//        }
-//
-//        public void setSelectResult(List<Row> result) {
-//            this.selectResult = result;
-//        }
-//
-//        public void setUpdateResult(int result) {
-//            this.updateResult = result;
-//        }
-//
-//        public void setDeleteResult(int result) {
-//            this.deleteResult = result;
-//        }
-//
-//        public void setTableExists(boolean exists) {
-//            this.tableExists = exists;
-//        }
-//    }
-//
-//    private Statement statement;
-//    private StubDb stubDb;
-//
-//    @BeforeEach
-//    public void setUp() {
-//        statement = new Statement();
-//        stubDb = new StubDb();
-//    }
-//
-//    // ==================== CREATE TABLE ====================
-//    // Covers: Statement type CREATE_TABLE branch (D1), createTable result (D2)
-//
-//    @Test
-//    public void testCreateTable_Success() throws IOException {
-//        // Covers: D1=CREATE_TABLE, D2=T
-//        statement.type = StatementType.CREATE_TABLE;
-//        statement.tableName = "courses";
-//        stubDb.setCreateTableResult(true);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testCreateTable_Error() throws IOException {
-//        // Covers: D1=CREATE_TABLE, D2=F
-//        statement.type = StatementType.CREATE_TABLE;
-//        statement.tableName = "courses";
-//        stubDb.setCreateTableResult(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.ERROR, result);
-//    }
-//
-//    // ==================== DROP TABLE ====================
-//    // Covers: Statement type DROP_TABLE branch (D1), tableExists check (D3), dropTable result (D4)
-//
-//    @Test
-//    public void testDropTable_TableNotFound() throws IOException {
-//        // Covers: D1=DROP_TABLE, D3=T (table not found)
-//        statement.type = StatementType.DROP_TABLE;
-//        statement.tableName = "nonexistent";
-//        stubDb.setTableExists(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
-//    }
-//
-//    @Test
-//    public void testDropTable_Success() throws IOException {
-//        // Covers: D1=DROP_TABLE, D3=F, D4=T
-//        statement.type = StatementType.DROP_TABLE;
-//        statement.tableName = "courses";
-//        stubDb.setTableExists(true);
-//        stubDb.setDropTableResult(true);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testDropTable_Error() throws IOException {
-//        // Covers: D1=DROP_TABLE, D3=F, D4=F
-//        statement.type = StatementType.DROP_TABLE;
-//        statement.tableName = "courses";
-//        stubDb.setTableExists(true);
-//        stubDb.setDropTableResult(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.ERROR, result);
-//    }
-//
-//    // ==================== INSERT ====================
-//    // Covers: Statement type INSERT branch (D1), tableExists check (D5), insert result (D6)
-//
-//    @Test
-//    public void testInsert_TableNotFound() throws IOException {
-//        // Covers: D1=INSERT, D5=T (table not found)
-//        statement.type = StatementType.INSERT;
-//        statement.tableName = "nonexistent";
-//        statement.rowToInsert = new Row(1, "Software-Engineering-Practice", "CS3343");
-//        stubDb.setTableExists(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
-//    }
-//
-//    @Test
-//    public void testInsert_Success() throws IOException {
-//        // Covers: D1=INSERT, D5=F, D6=T
-//        statement.type = StatementType.INSERT;
-//        statement.tableName = "courses";
-//        statement.rowToInsert = new Row(1, "Software-Engineering-Practice", "CS3343");
-//        stubDb.setTableExists(true);
-//        stubDb.setInsertResult(true);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testInsert_DuplicateKey() throws IOException {
-//        // Covers: D1=INSERT, D5=F, D6=F
-//        statement.type = StatementType.INSERT;
-//        statement.tableName = "courses";
-//        statement.rowToInsert = new Row(1, "Software-Engineering-Practice", "CS3343");
-//        stubDb.setTableExists(true);
-//        stubDb.setInsertResult(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.DUPLICATE_KEY, result);
-//    }
-//
-//    // ==================== SELECT ====================
-//    // Covers: Statement type SELECT branch (D1), tableExists check (D7),
-//    // columns null check (D8), isEmpty check (D9), column switch (D11), row iteration (D12)
-//
-//    @Test
-//    public void testSelect_TableNotFound() throws IOException {
-//        // Covers: D1=SELECT, D7=T (table not found)
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "nonexistent";
-//        statement.columns = null;
-//        stubDb.setTableExists(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
-//    }
-//
-//    @Test
-//    public void testSelect_EmptyResult() throws IOException {
-//        // Covers: D1=SELECT, D7=F, D8=T, D12=empty rows list
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = null;
-//        stubDb.setTableExists(true);
-//        stubDb.setSelectResult(new ArrayList<>());
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_NullColumns() throws IOException {
-//        // Covers: D1=SELECT, D7=F, D8=T, D12=non-empty rows
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = null;
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(1, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_EmptyColumns() throws IOException {
-//        // Covers: D1=SELECT, D7=F, D8=F, D9=T
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(2, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_ColumnId() throws IOException {
-//        // Covers: D1=SELECT, D7=F, D8=F, D9=F, D10=iterate, D11=case"id", D12=iterate
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        statement.columns.add("id");
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(3, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_ColumnCourseName() throws IOException {
-//        // Covers: D11=case"courseName"
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        statement.columns.add("courseName");
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(4, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_ColumnCourseCode() throws IOException {
-//        // Covers: D11=case"courseCode"
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        statement.columns.add("courseCode");
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(5, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_InvalidColumn() throws IOException {
-//        // Covers: D11=default (throws RuntimeException)
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        statement.columns.add("invalidColumn");
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(1, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        assertThrows(RuntimeException.class, () -> Executor.execute(statement, stubDb));
-//    }
-//
-//    @Test
-//    public void testSelect_TwoColumns() throws IOException {
-//        // Covers: D10=iterate through 2 columns
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        statement.columns.add("id");
-//        statement.columns.add("courseName");
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(6, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    @Test
-//    public void testSelect_ThreeColumns() throws IOException {
-//        // Covers: D10=iterate through 3 columns
-//        statement.type = StatementType.SELECT;
-//        statement.tableName = "courses";
-//        statement.columns = new ArrayList<>();
-//        statement.columns.add("id");
-//        statement.columns.add("courseName");
-//        statement.columns.add("courseCode");
-//        stubDb.setTableExists(true);
-//        List<Row> rows = new ArrayList<>();
-//        rows.add(new Row(7, "Software-Engineering-Practice", "CS3343"));
-//        stubDb.setSelectResult(rows);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    // ==================== UPDATE ====================
-//    // Covers: Statement type UPDATE branch (D1), tableExists check (D13)
-//
-//    @Test
-//    public void testUpdate_TableNotFound() throws IOException {
-//        // Covers: D1=UPDATE, D13=T (table not found)
-//        statement.type = StatementType.UPDATE;
-//        statement.tableName = "nonexistent";
-//        statement.setValues = new HashMap<>();
-//        statement.setValues.put("courseName", "New-Name");
-//        stubDb.setTableExists(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
-//    }
-//
-//    @Test
-//    public void testUpdate_Success() throws IOException {
-//        // Covers: D1=UPDATE, D13=F
-//        statement.type = StatementType.UPDATE;
-//        statement.tableName = "courses";
-//        statement.setValues = new HashMap<>();
-//        statement.setValues.put("courseName", "Updated-Course");
-//        stubDb.setTableExists(true);
-//        stubDb.setUpdateResult(1);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
-//
-//    // ==================== DELETE ====================
-//    // Covers: Statement type DELETE branch (D1), tableExists check (D14)
-//
-//    @Test
-//    public void testDelete_TableNotFound() throws IOException {
-//        // Covers: D1=DELETE, D14=T (table not found)
-//        statement.type = StatementType.DELETE;
-//        statement.tableName = "nonexistent";
-//        stubDb.setTableExists(false);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
-//    }
-//
-//    @Test
-//    public void testDelete_Success() throws IOException {
-//        // Covers: D1=DELETE, D14=F
-//        statement.type = StatementType.DELETE;
-//        statement.tableName = "courses";
-//        stubDb.setTableExists(true);
-//        stubDb.setDeleteResult(1);
-//        ExecuteResult result = Executor.execute(statement, stubDb);
-//        assertEquals(ExecuteResult.SUCCESS, result);
-//    }
+    @TempDir
+    Path tempDir;
+    
+    private Db db;
+    private Statement statement;
+    private ByteArrayOutputStream outputStream;
+    private PrintStream originalOut;
+    
+    @BeforeEach
+    public void setUp() throws IOException {
+        FileChunker chunker = new FileChunker(tempDir.resolve("test.db").toString(), 4096, 1000);
+        LinkedListTableFactory factory = new LinkedListTableFactory(chunker);
+        db = new Database(factory);
+        statement = new Statement();
+        
+        // Capture System.out
+        outputStream = new ByteArrayOutputStream();
+        originalOut = System.out;
+        System.setOut(new PrintStream(outputStream));
+    }
+    
+    @org.junit.jupiter.api.AfterEach
+    public void tearDown() {
+        System.setOut(originalOut);
+    }
+    
+    // ==================== CREATE TABLE ====================
+    
+    @Test
+    public void testCreateTable_Success() throws IOException {
+        statement.type = StatementType.CREATE_TABLE;
+        statement.tableName = "courses";
+        
+        List<Pair<String, DataType<?>>> fields = new ArrayList<>();
+        fields.add(new Pair<>("id", new Int32Type()));
+        fields.add(new Pair<>("name", new VarCharType(50)));
+        statement.tableSchema = new StructType(fields);
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        assertTrue(db.tableExists("courses"));
+    }
+    
+    @Test
+    public void testCreateTable_Duplicate() throws IOException {
+        // Create table first time
+        statement.type = StatementType.CREATE_TABLE;
+        statement.tableName = "courses";
+        
+        List<Pair<String, DataType<?>>> fields = new ArrayList<>();
+        fields.add(new Pair<>("id", new Int32Type()));
+        statement.tableSchema = new StructType(fields);
+        
+        Executor.execute(statement, db);
+        
+        // Try to create again
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.ERROR, result);
+    }
+    
+    // ==================== DROP TABLE ====================
+    
+    @Test
+    public void testDropTable_TableNotFound() throws IOException {
+        statement.type = StatementType.DROP_TABLE;
+        statement.tableName = "nonexistent";
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
+    }
+    
+    @Test
+    public void testDropTable_Success() throws IOException {
+        // Create table first
+        createTestTable("courses");
+        
+        // Drop it
+        statement.type = StatementType.DROP_TABLE;
+        statement.tableName = "courses";
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        assertFalse(db.tableExists("courses"));
+    }
+    
+    // ==================== INSERT ====================
+    
+    @Test
+    public void testInsert_TableNotFound() throws IOException {
+        statement.type = StatementType.INSERT;
+        statement.tableName = "nonexistent";
+        statement.valuesToInsert.put("id", "1");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
+    }
+    
+    @Test
+    public void testInsert_Success() throws IOException {
+        createTestTable("courses");
+        
+        statement.type = StatementType.INSERT;
+        statement.tableName = "courses";
+        statement.valuesToInsert.put("id", "1");
+        statement.valuesToInsert.put("name", "Software Engineering");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Verify insertion
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals(1, rows.size());
+        assertEquals(1, rows.get(0).get("id"));
+    }
+    
+    @Test
+    public void testInsert_DataTypeMismatch() throws IOException {
+        createTestTable("courses");
+        
+        statement.type = StatementType.INSERT;
+        statement.tableName = "courses";
+        statement.valuesToInsert.put("id", "not_a_number");
+        statement.valuesToInsert.put("name", "Test");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.DATA_TYPE_MISMATCH, result);
+    }
+    
+    // ==================== SELECT ====================
+    
+    @Test
+    public void testSelect_TableNotFound() throws IOException {
+        statement.type = StatementType.SELECT;
+        statement.tableName = "nonexistent";
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
+    }
+    
+    @Test
+    public void testSelect_AllColumns() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        
+        statement.type = StatementType.SELECT;
+        statement.tableName = "courses";
+        statement.columns = null;
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        assertTrue(outputStream.toString().contains("1"));
+        assertTrue(outputStream.toString().contains("SE"));
+    }
+    
+    @Test
+    public void testSelect_SpecificColumns() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        
+        statement.type = StatementType.SELECT;
+        statement.tableName = "courses";
+        statement.columns = Arrays.asList("id");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        assertTrue(outputStream.toString().contains("1"));
+    }
+    
+    @Test
+    public void testSelect_WithCondition() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        insertTestData("courses", 2, "AI");
+        
+        statement.type = StatementType.SELECT;
+        statement.tableName = "courses";
+        statement.whereCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, "1");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        String output = outputStream.toString();
+        assertTrue(output.contains("SE"));
+        assertFalse(output.contains("AI"));
+    }
+    
+    @Test
+    public void testSelect_WithLimit() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        insertTestData("courses", 2, "AI");
+        insertTestData("courses", 3, "ML");
+        
+        statement.type = StatementType.SELECT;
+        statement.tableName = "courses";
+        statement.limit = 2;
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Should only show 2 results
+        String output = outputStream.toString();
+        int lineCount = output.split("\n").length;
+        assertEquals(2, lineCount);
+    }
+    
+    @Test
+    public void testSelect_InvalidColumn() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        
+        statement.type = StatementType.SELECT;
+        statement.tableName = "courses";
+        statement.columns = Arrays.asList("invalidColumn");
+        
+        assertThrows(RuntimeException.class, () -> Executor.execute(statement, db));
+    }
+    
+    // ==================== UPDATE ====================
+    
+    @Test
+    public void testUpdate_TableNotFound() throws IOException {
+        statement.type = StatementType.UPDATE;
+        statement.tableName = "nonexistent";
+        statement.setValues.put("name", "New Name");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
+    }
+    
+    @Test
+    public void testUpdate_Success() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        
+        statement.type = StatementType.UPDATE;
+        statement.tableName = "courses";
+        statement.setValues.put("name", "Updated");
+        statement.whereCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, "1");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Verify update
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals("Updated", rows.get(0).get("name"));
+        assertTrue(outputStream.toString().contains("Updated 1 row(s)"));
+    }
+    
+    @Test
+    public void testUpdate_WithLimit() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        insertTestData("courses", 2, "AI");
+        insertTestData("courses", 3, "ML");
+        
+        statement.type = StatementType.UPDATE;
+        statement.tableName = "courses";
+        statement.setValues.put("name", "Updated");
+        statement.limit = 2;
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Should update only 2 rows
+        assertTrue(outputStream.toString().contains("Updated 2 row(s)"));
+    }
+    
+    @Test
+    public void testUpdate_DataTypeMismatch() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        
+        statement.type = StatementType.UPDATE;
+        statement.tableName = "courses";
+        statement.setValues.put("id", "not_a_number");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.DATA_TYPE_MISMATCH, result);
+    }
+    
+    // ==================== DELETE ====================
+    
+    @Test
+    public void testDelete_TableNotFound() throws IOException {
+        statement.type = StatementType.DELETE;
+        statement.tableName = "nonexistent";
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.TABLE_NOT_FOUND, result);
+    }
+    
+    @Test
+    public void testDelete_Success() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        insertTestData("courses", 2, "AI");
+        
+        statement.type = StatementType.DELETE;
+        statement.tableName = "courses";
+        statement.whereCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, "1");
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Verify deletion
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals(1, rows.size());
+        assertEquals(2, rows.get(0).get("id"));
+        assertTrue(outputStream.toString().contains("Deleted 1 row(s)"));
+    }
+    
+    @Test
+    public void testDelete_WithLimit() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        insertTestData("courses", 2, "AI");
+        insertTestData("courses", 3, "ML");
+        
+        statement.type = StatementType.DELETE;
+        statement.tableName = "courses";
+        statement.limit = 2;
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Should delete only 2 rows
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals(1, rows.size());
+        assertTrue(outputStream.toString().contains("Deleted 2 row(s)"));
+    }
+    
+    @Test
+    public void testDelete_All() throws IOException {
+        createTestTable("courses");
+        insertTestData("courses", 1, "SE");
+        insertTestData("courses", 2, "AI");
+        
+        statement.type = StatementType.DELETE;
+        statement.tableName = "courses";
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Verify all deleted
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals(0, rows.size());
+    }
+    
+    // ==================== Helper Methods ====================
+    
+    private void createTestTable(String tableName) throws IOException {
+        List<Pair<String, DataType<?>>> fields = new ArrayList<>();
+        fields.add(new Pair<>("id", new Int32Type()));
+        fields.add(new Pair<>("name", new VarCharType(50)));
+        StructType schema = new StructType(fields);
+        
+        db.createTable(tableName, schema);
+    }
+    
+    private void insertTestData(String tableName, int id, String name) {
+        Map<String, Object> row = new HashMap<>();
+        row.put("id", id);
+        row.put("name", name);
+        db.getTable(tableName).insert(row);
+    }
 }
+
