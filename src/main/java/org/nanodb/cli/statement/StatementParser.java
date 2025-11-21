@@ -183,6 +183,8 @@ public class StatementParser {
                         return PrepareResult.SYNTAX_ERROR;
                     }
                 }
+            } else {
+                statement.whereCondition = BooleanCondition.TRUE;
             }
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("update ")) {
@@ -224,6 +226,8 @@ public class StatementParser {
                         return PrepareResult.SYNTAX_ERROR;
                     }
                 }
+            } else {
+                statement.whereCondition = BooleanCondition.TRUE;
             }
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("delete from ")) {
@@ -266,6 +270,8 @@ public class StatementParser {
                         return PrepareResult.SYNTAX_ERROR;
                     }
                 }
+            } else {
+                statement.whereCondition = BooleanCondition.TRUE;
             }
             return PrepareResult.SUCCESS;
         }

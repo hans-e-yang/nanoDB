@@ -6,6 +6,7 @@ import org.nanodb.cli.statement.PrepareResult;
 import org.nanodb.cli.statement.Statement;
 import org.nanodb.cli.statement.StatementParser;
 import org.nanodb.cli.statement.StatementType;
+import org.nanodb.internal.condition.BooleanCondition;
 import org.nanodb.internal.primitives.DateType;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -240,6 +241,7 @@ public class StatementParserTest {
         assertEquals(StatementType.SELECT, statement.type);
         assertEquals("courses", statement.tableName);
         assertNull(statement.columns); // null indicates all columns
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -250,6 +252,7 @@ public class StatementParserTest {
         assertEquals(2, statement.columns.size());
         assertEquals("id", statement.columns.get(0));
         assertEquals("courseName", statement.columns.get(1));
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -258,6 +261,7 @@ public class StatementParserTest {
         PrepareResult result = StatementParser.prepareStatement("select col_1, col2 from courses", statement);
         assertEquals(PrepareResult.SUCCESS, result);
         assertEquals(2, statement.columns.size());
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -324,6 +328,7 @@ public class StatementParserTest {
         assertEquals(StatementType.UPDATE, statement.type);
         assertEquals("courses", statement.tableName);
         assertEquals("Software-Engineering-Practice", statement.setValues.get("courseName"));
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -332,6 +337,7 @@ public class StatementParserTest {
         PrepareResult result = StatementParser.prepareStatement("update courses set courseName = 'Software Engineering Practice'", statement);
         assertEquals(PrepareResult.SUCCESS, result);
         assertEquals("Software Engineering Practice", statement.setValues.get("courseName"));
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -341,6 +347,7 @@ public class StatementParserTest {
         assertEquals(PrepareResult.SUCCESS, result);
         assertEquals("NewName", statement.setValues.get("courseName"));
         assertEquals("CS1234", statement.setValues.get("courseCode"));
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -374,6 +381,7 @@ public class StatementParserTest {
         assertEquals(PrepareResult.SUCCESS, result);
         assertEquals("test", statement.setValues.get("name"));
         assertEquals("25", statement.setValues.get("age"));
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -420,7 +428,7 @@ public class StatementParserTest {
         assertEquals(PrepareResult.SUCCESS, result);
         assertEquals(StatementType.DELETE, statement.type);
         assertEquals("courses", statement.tableName);
-        assertNull(statement.whereCondition);
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -577,6 +585,7 @@ public class StatementParserTest {
         assertEquals(StatementType.SELECT, statement.type);
         assertEquals("courses", statement.tableName);
         assertEquals(10, statement.limit);
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -596,6 +605,7 @@ public class StatementParserTest {
         assertEquals(PrepareResult.SUCCESS, result);
         assertEquals(2, statement.columns.size());
         assertEquals(5, statement.limit);
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
@@ -656,6 +666,7 @@ public class StatementParserTest {
         assertEquals(StatementType.DELETE, statement.type);
         assertEquals("courses", statement.tableName);
         assertEquals(10, statement.limit);
+        assertEquals(BooleanCondition.TRUE, statement.whereCondition);
     }
 
     @Test
