@@ -1,4 +1,4 @@
-package org.nanodb.parser;
+package org.nanodb.frontend.cli.parser;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
