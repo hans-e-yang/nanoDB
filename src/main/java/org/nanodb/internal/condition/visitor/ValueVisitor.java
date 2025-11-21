@@ -52,20 +52,34 @@ public class ValueVisitor implements ConditionVisitor {
 
     @Override
     public boolean visitComparison(ComparisonCondition comparisonCondition) {
-        // Check if the comparisons are first valid.
         ComparisonOperation op = comparisonCondition.getOp();
 
         String path = comparisonCondition.getColumn();
         Object expectedValue = comparisonCondition.getValue();
         Object actualValue = GetValue(path);
 
-        // Validate the types
-        Class<?> expectedType = expectedValue.getClass();
-        Class<?> actualType = expectedValue.getClass();
-
-        throw new InvalidColumnNameException("Incomplete column path. Column path should point to a value");
-
-
+        // Perform comparison based on operation
+        int comparison = compareValues(actualValue, expectedValue);
+        
+        switch (op) {
+            case EQUAL:
+                return comparison == 0;
+            case NOT_EQUALS:
+                return comparison != 0;
+            case LESS_THAN:
+                return comparison < 0;
+            case LESS_EQUALS:
+                return comparison <= 0;
+            case GREATER_THAN:
+                return comparison > 0;
+            case GREATER_EQUALS:
+                return comparison >= 0;
+            case LIKE:
+                // For LIKE operation, convert both to strings and use contains
+                return actualValue.toString().contains(expectedValue.toString());
+            default:
+                throw new IllegalArgumentException("Unknown comparison operation: " + op);
+        }
     }
 
 }
