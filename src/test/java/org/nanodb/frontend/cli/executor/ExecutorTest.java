@@ -7,6 +7,7 @@ import org.nanodb.cli.executor.ExecuteResult;
 import org.nanodb.cli.executor.Executor;
 import org.nanodb.cli.statement.Statement;
 import org.nanodb.cli.statement.StatementType;
+import org.nanodb.exception.MissingWhereConditionException;
 import org.nanodb.internal.chunker.FileChunker;
 import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;
@@ -37,10 +38,11 @@ public class ExecutorTest {
     private Statement statement;
     private ByteArrayOutputStream outputStream;
     private PrintStream originalOut;
+    private FileChunker chunker;
     
     @BeforeEach
     public void setUp() throws IOException {
-        FileChunker chunker = new FileChunker(tempDir.resolve("test.db").toString(), 4096, 1000);
+        chunker = new FileChunker(tempDir.resolve("test.db").toString(), 4096, 1000);
         LinkedListTableFactory factory = new LinkedListTableFactory(chunker);
         db = new Database(factory);
         statement = new Statement();
@@ -52,14 +54,17 @@ public class ExecutorTest {
     }
     
     @org.junit.jupiter.api.AfterEach
-    public void tearDown() {
+    public void tearDown() throws IOException {
         System.setOut(originalOut);
+        if (chunker != null) {
+            chunker.close();
+        }
     }
     
     // ==================== CREATE TABLE ====================
     
     @Test
-    public void testCreateTable_Success() throws IOException {
+    public void testCreateTable_Success() throws IOException, MissingWhereConditionException {
         statement.type = StatementType.CREATE_TABLE;
         statement.tableName = "courses";
         
@@ -74,7 +79,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testCreateTable_Duplicate() throws IOException {
+    public void testCreateTable_Duplicate() throws IOException, MissingWhereConditionException {
         // Create table first time
         statement.type = StatementType.CREATE_TABLE;
         statement.tableName = "courses";
@@ -93,7 +98,7 @@ public class ExecutorTest {
     // ==================== DROP TABLE ====================
     
     @Test
-    public void testDropTable_TableNotFound() throws IOException {
+    public void testDropTable_TableNotFound() throws IOException, MissingWhereConditionException {
         statement.type = StatementType.DROP_TABLE;
         statement.tableName = "nonexistent";
         
@@ -102,7 +107,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testDropTable_Success() throws IOException {
+    public void testDropTable_Success() throws IOException, MissingWhereConditionException {
         // Create table first
         createTestTable("courses");
         
@@ -118,7 +123,7 @@ public class ExecutorTest {
     // ==================== INSERT ====================
     
     @Test
-    public void testInsert_TableNotFound() throws IOException {
+    public void testInsert_TableNotFound() throws IOException, MissingWhereConditionException {
         statement.type = StatementType.INSERT;
         statement.tableName = "nonexistent";
         statement.valuesToInsert.put("id", "1");
@@ -128,7 +133,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testInsert_Success() throws IOException {
+    public void testInsert_Success() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         
         statement.type = StatementType.INSERT;
@@ -146,7 +151,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testInsert_DataTypeMismatch() throws IOException {
+    public void testInsert_DataTypeMismatch() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         
         statement.type = StatementType.INSERT;
@@ -161,7 +166,7 @@ public class ExecutorTest {
     // ==================== SELECT ====================
     
     @Test
-    public void testSelect_TableNotFound() throws IOException {
+    public void testSelect_TableNotFound() throws IOException, MissingWhereConditionException {
         statement.type = StatementType.SELECT;
         statement.tableName = "nonexistent";
         
@@ -170,7 +175,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testSelect_AllColumns() throws IOException {
+    public void testSelect_AllColumns() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         
@@ -185,7 +190,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testSelect_SpecificColumns() throws IOException {
+    public void testSelect_SpecificColumns() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         
@@ -199,7 +204,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testSelect_WithCondition() throws IOException {
+    public void testSelect_WithCondition() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         insertTestData("courses", 2, "AI");
@@ -217,7 +222,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testSelect_WithLimit() throws IOException {
+    public void testSelect_WithLimit() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         insertTestData("courses", 2, "AI");
@@ -237,7 +242,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testSelect_InvalidColumn() throws IOException {
+    public void testSelect_InvalidColumn() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         
@@ -251,7 +256,7 @@ public class ExecutorTest {
     // ==================== UPDATE ====================
     
     @Test
-    public void testUpdate_TableNotFound() throws IOException {
+    public void testUpdate_TableNotFound() throws IOException, MissingWhereConditionException {
         statement.type = StatementType.UPDATE;
         statement.tableName = "nonexistent";
         statement.setValues.put("name", "New Name");
@@ -261,7 +266,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testUpdate_Success() throws IOException {
+    public void testUpdate_Success() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         
@@ -280,7 +285,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testUpdate_WithLimit() throws IOException {
+    public void testUpdate_WithLimit() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         insertTestData("courses", 2, "AI");
@@ -299,7 +304,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testUpdate_DataTypeMismatch() throws IOException {
+    public void testUpdate_DataTypeMismatch() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         
@@ -314,7 +319,7 @@ public class ExecutorTest {
     // ==================== DELETE ====================
     
     @Test
-    public void testDelete_TableNotFound() throws IOException {
+    public void testDelete_TableNotFound() throws IOException, MissingWhereConditionException {
         statement.type = StatementType.DELETE;
         statement.tableName = "nonexistent";
         
@@ -323,7 +328,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testDelete_Success() throws IOException {
+    public void testDelete_Success() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         insertTestData("courses", 2, "AI");
@@ -343,7 +348,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testDelete_WithLimit() throws IOException {
+    public void testDelete_WithLimit() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         insertTestData("courses", 2, "AI");
@@ -363,7 +368,7 @@ public class ExecutorTest {
     }
     
     @Test
-    public void testDelete_All() throws IOException {
+    public void testDelete_All() throws IOException, MissingWhereConditionException {
         createTestTable("courses");
         insertTestData("courses", 1, "SE");
         insertTestData("courses", 2, "AI");
@@ -381,7 +386,7 @@ public class ExecutorTest {
     
     // ==================== Helper Methods ====================
     
-    private void createTestTable(String tableName) throws IOException {
+    private void createTestTable(String tableName) throws IOException, MissingWhereConditionException {
         List<Pair<String, DataType<?>>> fields = new ArrayList<>();
         fields.add(new Pair<>("id", new Int32Type()));
         fields.add(new Pair<>("name", new VarCharType(50)));

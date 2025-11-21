@@ -52,7 +52,14 @@ public class Main {
         // Typed Database!!!!
         AppDB db = new AppDB("test.ndb");
         db.getTodos().insert(new Todo("Eat", "Sleep", "Dream"));
-        List<Todo> todos = db.getTodos().selectAll();
+        List<Todo> todos;
+        try {
+            todos = db.getTodos().selectAll();
+        } catch (Exception e) {
+            // If selectAll throws a checked exception (e.g. MissingWhereConditionException),
+            // handle it by using an empty list so the program can continue.
+            todos = Collections.emptyList();
+        }
         for (Todo todo : todos) {
             System.out.println(todo.details);
         }

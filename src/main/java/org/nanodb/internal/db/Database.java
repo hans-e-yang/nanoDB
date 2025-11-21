@@ -1,5 +1,6 @@
 package org.nanodb.internal.db;
 
+import org.nanodb.exception.MissingWhereConditionException;
 import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;
 import org.nanodb.internal.primitives.*;
@@ -34,7 +35,12 @@ public class Database extends Db {
     public Database(TableFactory factory) {
         super(factory);
         this.metadata = factory.getInitial(tableDefinitionType);
-        List<Map<String, Object>> tables = this.metadata.selectAll();
+        List<Map<String, Object>> tables;
+        try {
+            tables = this.metadata.selectAll();
+        } catch (MissingWhereConditionException e) {
+            throw new RuntimeException(e);
+        }
         // Load the table definitions
         for (Map<String, Object> table : tables) {
             String tableName = (String) table.get(NAME_FIELD);
@@ -74,7 +80,11 @@ public class Database extends Db {
         table.clear();
 
         // remove from metadata where name equal tablename
-        metadata.delete(new ComparisonCondition(NAME_FIELD, ComparisonOperation.EQUAL, tableName));
+        try {
+            metadata.delete(new ComparisonCondition(NAME_FIELD, ComparisonOperation.EQUAL, tableName));
+        } catch (MissingWhereConditionException e) {
+            throw new RuntimeException(e);
+        }
 
         // remove from memory too
         this.tables.remove(tableName);

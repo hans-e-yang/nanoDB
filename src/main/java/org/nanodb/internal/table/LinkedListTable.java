@@ -1,12 +1,12 @@
 package org.nanodb.internal.table;
 
+import org.nanodb.exception.MissingWhereConditionException;
 import org.nanodb.internal.chunker.Chunker;
 import org.nanodb.internal.condition.Condition;
 import org.nanodb.internal.condition.ConditionVisitor;
 import org.nanodb.internal.condition.visitor.ValueVisitor;
 import org.nanodb.internal.primitives.Int32Type;
 import org.nanodb.internal.primitives.StructType;
-import org.nanodb.utils.Table;
 import org.nanodb.utils.Reader;
 import org.nanodb.utils.ByteExtensions;
 
@@ -132,7 +132,10 @@ public class LinkedListTable extends InternalTable {
         this.recordType = recordType;
     }
 
-    public List<Map<String, Object>> select(Condition condition, int limit) {
+    public List<Map<String, Object>> select(Condition condition, int limit) throws MissingWhereConditionException {
+        if (condition == null) {
+            throw new MissingWhereConditionException("Where condition cannot be null");
+        }
         List<Map<String, Object>> results = new ArrayList<>();
 
         LinkedListNode node = new LinkedListNode(this.chunker, this.recordType, this.startingBlockId);
@@ -156,7 +159,10 @@ public class LinkedListTable extends InternalTable {
     }
 
     // Returns the count of deleted rows
-    public int delete(Condition condition, int limit) {
+    public int delete(Condition condition, int limit) throws MissingWhereConditionException {
+        if (condition == null) {
+            throw new MissingWhereConditionException("Where condition cannot be null");
+        }
         int deleted = 0;
 
         // Clean all nodes, but we do not deallocate them
@@ -171,13 +177,11 @@ public class LinkedListTable extends InternalTable {
             for (Map<String, Object> row : node.getRecords()) {
                 // compare the row with the condition
                 ConditionVisitor comparer = new ValueVisitor(row);
-                if (condition.accept(comparer)) {
-                    kept.add(row);
-                } else {
+                if (deleted < limit && condition.accept(comparer)) {
                     deleted++;
+                } else {
+                    kept.add(row);
                 }
-
-                if (deleted >= limit) break;
             }
 
             node.updateNode(kept);
@@ -187,7 +191,10 @@ public class LinkedListTable extends InternalTable {
         return deleted;
     }
 
-    public int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction, int limit) {
+    public int update(Condition condition, Function<Map<String, Object>, Map<String, Object>> updateFunction, int limit) throws MissingWhereConditionException {
+        if (condition == null) {
+            throw new MissingWhereConditionException("Where condition cannot be null");
+        }
         int updated = 0;
 
         // Clean all nodes, but we do not deallocate them
@@ -202,13 +209,12 @@ public class LinkedListTable extends InternalTable {
             for (Map<String, Object> row : node.getRecords()) {
                 // compare the row with the condition
                 ConditionVisitor comparer = new ValueVisitor(row);
-                if (condition.accept(comparer)) {
+                if (updated < limit && condition.accept(comparer)) {
                     newRows.add(updateFunction.apply(row));
+                    updated++;
                 } else {
                     newRows.add(row);
                 }
-
-                if (updated >= limit) break;
             }
 
             node.updateNode(newRows);

@@ -1,11 +1,10 @@
 package org.nanodb.orm;
 
-import org.nanodb.internal.condition.BooleanCondition;
+import org.nanodb.exception.MissingWhereConditionException;
 import org.nanodb.internal.condition.Condition;
 import org.nanodb.internal.table.InternalTable;
 import org.nanodb.orm.internal.ClassMapSerializer;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -18,13 +17,13 @@ public class Table<T extends BaseModel> extends org.nanodb.utils.Table<T> {
         this.serializer = new ClassMapSerializer<T>((Class<T>)type);
     }
 
-    public List<T> select(Condition condition, int limit) {
+    public List<T> select(Condition condition, int limit) throws MissingWhereConditionException {
         return table.select(condition, limit).stream().map(serializer::serialize).toList();
     }
 
-    public int delete(Condition condition, int limit) { return table.delete(condition, limit); }
+    public int delete(Condition condition, int limit) throws MissingWhereConditionException { return table.delete(condition, limit); }
 
-    public int update(Condition condition, Function<T, T> updateFunction, int limit) {
+    public int update(Condition condition, Function<T, T> updateFunction, int limit) throws MissingWhereConditionException {
         Function<Map<String, Object>, Map<String, Object>> wrappedUpdateFunction = src ->
                 serializer.deserialize(updateFunction.apply(serializer.serialize(src)));
 

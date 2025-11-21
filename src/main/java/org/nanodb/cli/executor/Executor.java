@@ -1,9 +1,11 @@
 package org.nanodb.cli.executor;
 
 import org.nanodb.cli.statement.Statement;
+import org.nanodb.exception.MissingWhereConditionException;
 import org.nanodb.internal.db.*;
 import org.nanodb.internal.primitives.*;
 import org.nanodb.cli.parser.ValueParser;
+import org.nanodb.internal.condition.BooleanCondition;
 import org.nanodb.internal.condition.Condition;
 
 import java.io.IOException;
@@ -63,8 +65,16 @@ public class Executor {
                     } catch (ParseException e) {
                         return ExecuteResult.DATA_TYPE_MISMATCH;
                     }
+                } else {
+                    parsedSelectCondition = BooleanCondition.TRUE;
                 }
-                List<Map<String, Object>> results = db.getTable(statement.tableName).select(parsedSelectCondition, statement.limit);
+                List<Map<String, Object>> results;
+                try {
+                    results = db.getTable(statement.tableName).select(parsedSelectCondition, statement.limit);
+                } catch (MissingWhereConditionException e) {
+                    System.out.println(e.getMessage());
+                    return ExecuteResult.ERROR;
+                }
                 for (Map<String, Object> row : results) {
                     System.out.println(formatRow(row, statement.columns));
                 }
@@ -82,20 +92,28 @@ public class Executor {
                     // Parse WHERE condition values according to schema
                     if (statement.whereCondition != null) {
                         parsedUpdateCondition = ValueParser.parseConditionValues(parsedUpdateCondition, updateSchema);
+                    } else {
+                        parsedUpdateCondition = BooleanCondition.TRUE;
                     }
                 } catch (ParseException e) {
                     return ExecuteResult.DATA_TYPE_MISMATCH;
                 }
                 // Create update function that merges the parsed update values into the row
-                int updateCount = db.getTable(statement.tableName).update(
-                    parsedUpdateCondition,
-                    row -> {
-                        Map<String, Object> updatedRow = new java.util.HashMap<>(row);
-                        updatedRow.putAll(parsedUpdateValues);
-                        return updatedRow;
-                    },
-                    statement.limit
-                );
+                int updateCount;
+                try {
+                    updateCount = db.getTable(statement.tableName).update(
+                        parsedUpdateCondition,
+                        row -> {
+                            Map<String, Object> updatedRow = new java.util.HashMap<>(row);
+                            updatedRow.putAll(parsedUpdateValues);
+                            return updatedRow;
+                        },
+                        statement.limit
+                    );
+                } catch (MissingWhereConditionException e) {
+                    System.out.println(e.getMessage());
+                    return ExecuteResult.ERROR;
+                }
                 System.out.println("Updated " + updateCount + " row(s).");
                 return ExecuteResult.SUCCESS;
             case DELETE:
@@ -111,8 +129,16 @@ public class Executor {
                     } catch (ParseException e) {
                         return ExecuteResult.DATA_TYPE_MISMATCH;
                     }
+                } else {
+                    parsedDeleteCondition = BooleanCondition.TRUE;
                 }
-                int deleteCount = db.getTable(statement.tableName).delete(parsedDeleteCondition, statement.limit);
+                int deleteCount;
+                try {
+                    deleteCount = db.getTable(statement.tableName).delete(parsedDeleteCondition, statement.limit);
+                } catch (MissingWhereConditionException e) {
+                    System.out.println(e.getMessage());
+                    return ExecuteResult.ERROR;
+                }
                 System.out.println("Deleted " + deleteCount + " row(s).");
                 return ExecuteResult.SUCCESS;
             default:
