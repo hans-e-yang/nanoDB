@@ -103,7 +103,8 @@ public class ValueParser {
             // Base case: parse the comparison value and create a new condition
             ComparisonCondition comp = (ComparisonCondition) condition;
             String columnName = comp.getColumn();
-            String stringValue = comp.getStringValue();
+            Object value = comp.getValue();
+            String stringValue = value instanceof String ? (String) value : value.toString();
 
             // Find the column type in schema
             DataType<?> expectedType = getColumnType(columnName, schema);
@@ -116,9 +117,7 @@ public class ValueParser {
             Object parsedValue = parseValue(stringValue, expectedType);
             
             // Create a new ComparisonCondition with the parsed value
-            ComparisonCondition parsedCondition = new ComparisonCondition(columnName, comp.getOp(), stringValue);
-            parsedCondition.setParsedValue(parsedValue);
-            return parsedCondition;
+            return new ComparisonCondition(columnName, comp.getOp(), parsedValue);
 
         } else if (condition instanceof AndCondition) {
             // Recursive case: traverse left and right children, create new AndCondition

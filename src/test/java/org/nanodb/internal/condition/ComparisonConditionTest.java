@@ -98,13 +98,12 @@ public class ComparisonConditionTest {
     }
 
     @Test
-    public void testGetStringValue_WithParsedNonStringValue() {
+    public void testSetParsedValue_UpdatesValue() {
         ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.EQUAL, "25");
         // Parse the string value to an Integer
         condition.setParsedValue(Integer.valueOf(25));
         
-        // getStringValue should call toString() on the non-String object
-        assertEquals("25", condition.getStringValue());
+        // getValue should return the parsed Integer value
         assertEquals(25, condition.getValue());
     }
 

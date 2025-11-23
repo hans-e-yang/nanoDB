@@ -17,7 +17,7 @@ public class ComparisonCondition implements Condition {
         return value;
     }
 
-    public ComparisonCondition(String column, ComparisonOperation op, String value) {
+    public ComparisonCondition(String column, ComparisonOperation op, Object value) {
         this.column = column;
         this.op = op;
         this.value = value;
@@ -29,14 +29,6 @@ public class ComparisonCondition implements Condition {
      */
     public void setParsedValue(Object parsedValue) {
         this.value = parsedValue;
-    }
-
-    /**
-     * Gets the raw string value (before parsing)
-     * @return The string value if not yet parsed, or the parsed value
-     */
-    public String getStringValue() {
-        return this.value instanceof String ? (String) this.value : this.value.toString();
     }
 
     public boolean accept(ConditionVisitor visitor) {
