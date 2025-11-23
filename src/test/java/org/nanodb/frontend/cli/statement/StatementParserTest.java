@@ -36,12 +36,10 @@ public class StatementParserTest {
     // ==================== CREATE TABLE Tests ====================
 
     @Test
-    public void testCreateTable_Simple() {
-        // Test CREATE TABLE without column definitions
+    public void testCreateTable_NoColumnDefinitions() {
+        // Test CREATE TABLE without column definitions (should return syntax error)
         PrepareResult result = StatementParser.prepareStatement("create table courses", statement);
-        assertEquals(PrepareResult.SUCCESS, result);
-        assertEquals(StatementType.CREATE_TABLE, statement.type);
-        assertEquals("courses", statement.tableName);
+        assertEquals(PrepareResult.SYNTAX_ERROR, result);
     }
 
     @Test

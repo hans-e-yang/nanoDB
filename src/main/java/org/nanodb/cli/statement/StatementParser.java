@@ -21,9 +21,8 @@ public class StatementParser {
             
             int openParen = rest.indexOf('(');
             if (openParen == -1) {
-                // Simple CREATE TABLE without column definitions
-                statement.tableName = rest.trim();
-                return PrepareResult.SUCCESS;
+                // CREATE TABLE without column definitions is a syntax error
+                return PrepareResult.SYNTAX_ERROR;
             }
             
             statement.tableName = rest.substring(0, openParen).trim();
