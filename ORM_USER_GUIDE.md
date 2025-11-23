@@ -256,7 +256,7 @@ import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;
 
 // Select students where age >= 20
-ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, "20");
+ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, 20);
 List<Student> adults = db.students.select(condition);
 ```
 
@@ -264,7 +264,7 @@ List<Student> adults = db.students.select(condition);
 
 ```java
 // Get first 5 students where age >= 18
-ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, "18");
+ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, 18);
 List<Student> limitedResults = db.students.select(condition, 5);
 ```
 
@@ -277,7 +277,7 @@ import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;
 
 // Update email for student with id = 1
-ComparisonCondition condition = new ComparisonCondition("id", ComparisonOperation.EQUAL, "1");
+ComparisonCondition condition = new ComparisonCondition("id", ComparisonOperation.EQUAL, 1);
 int updated = db.students.update(
     condition,
     student -> {
@@ -292,7 +292,7 @@ System.out.println("Updated " + updated + " record(s)");
 
 ```java
 // Update first 10 students with age < 18
-ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.LESS_THAN, "18");
+ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.LESS_THAN, 18);
 int updated = db.students.update(
     condition,
     student -> {
@@ -324,7 +324,7 @@ int updated = db.students.update(
 
 ```java
 // Delete students with age < 18
-ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.LESS_THAN, "18");
+ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.LESS_THAN, 18);
 int deleted = db.students.delete(condition);
 System.out.println("Deleted " + deleted + " record(s)");
 ```
@@ -333,7 +333,7 @@ System.out.println("Deleted " + deleted + " record(s)");
 
 ```java
 // Delete first 5 inactive students
-ComparisonCondition condition = new ComparisonCondition("active", ComparisonOperation.EQUAL, "false");
+ComparisonCondition condition = new ComparisonCondition("active", ComparisonOperation.EQUAL, false);
 int deleted = db.students.delete(condition, 5);
 ```
 
@@ -361,16 +361,16 @@ new ComparisonCondition("name", ComparisonOperation.EQUAL, "Alice");
 new ComparisonCondition("status", ComparisonOperation.NOT_EQUALS, "inactive");
 
 // Greater than
-new ComparisonCondition("age", ComparisonOperation.GREATER_THAN, "18");
+new ComparisonCondition("age", ComparisonOperation.GREATER_THAN, 18);
 
 // Less than
-new ComparisonCondition("score", ComparisonOperation.LESS_THAN, "100");
+new ComparisonCondition("score", ComparisonOperation.LESS_THAN, 100);
 
 // Greater than or equal
-new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, "21");
+new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, 21);
 
 // Less than or equal
-new ComparisonCondition("price", ComparisonOperation.LESS_EQUALS, "50");
+new ComparisonCondition("price", ComparisonOperation.LESS_EQUALS, 50);
 
 // Pattern matching (LIKE)
 new ComparisonCondition("email", ComparisonOperation.LIKE, "%@example.com");
@@ -383,7 +383,7 @@ new ComparisonCondition("email", ComparisonOperation.LIKE, "%@example.com");
 ```java
 import org.nanodb.internal.condition.AndCondition;
 
-ComparisonCondition ageCondition = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, "18");
+ComparisonCondition ageCondition = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, 18);
 ComparisonCondition statusCondition = new ComparisonCondition("status", ComparisonOperation.EQUAL, "active");
 
 AndCondition combined = new AndCondition(ageCondition, statusCondition);
@@ -395,8 +395,8 @@ List<Student> results = db.students.select(combined);
 ```java
 import org.nanodb.internal.condition.OrCondition;
 
-ComparisonCondition freshmen = new ComparisonCondition("year", ComparisonOperation.EQUAL, "1");
-ComparisonCondition sophomores = new ComparisonCondition("year", ComparisonOperation.EQUAL, "2");
+ComparisonCondition freshmen = new ComparisonCondition("year", ComparisonOperation.EQUAL, 1);
+ComparisonCondition sophomores = new ComparisonCondition("year", ComparisonOperation.EQUAL, 2);
 
 OrCondition either = new OrCondition(freshmen, sophomores);
 List<Student> results = db.students.select(either);
@@ -406,9 +406,9 @@ List<Student> results = db.students.select(either);
 
 ```java
 // (age >= 18 AND status = 'active') OR (premium = true)
-ComparisonCondition ageCheck = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, "18");
+ComparisonCondition ageCheck = new ComparisonCondition("age", ComparisonOperation.GREATER_EQUALS, 18);
 ComparisonCondition statusCheck = new ComparisonCondition("status", ComparisonOperation.EQUAL, "active");
-ComparisonCondition premiumCheck = new ComparisonCondition("premium", ComparisonOperation.EQUAL, "true");
+ComparisonCondition premiumCheck = new ComparisonCondition("premium", ComparisonOperation.EQUAL, true);
 
 AndCondition baseUsers = new AndCondition(ageCheck, statusCheck);
 OrCondition allEligible = new OrCondition(baseUsers, premiumCheck);
@@ -515,24 +515,24 @@ public class BlogApp {
         db.posts.insert(List.of(post1, post2));
         
         // Query active users
-        ComparisonCondition activeCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, "true");
+        ComparisonCondition activeCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, true);
         List<User> activeUsers = db.users.select(activeCondition);
         System.out.println("Active users: " + activeUsers.size());
         
         // Update user age
-        ComparisonCondition userCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, "1");
+        ComparisonCondition userCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, 1);
         db.users.update(userCondition, user -> {
             user.age = 26;
             return user;
         });
         
         // Find posts by user
-        ComparisonCondition postCondition = new ComparisonCondition("userId", ComparisonOperation.EQUAL, "1");
+        ComparisonCondition postCondition = new ComparisonCondition("userId", ComparisonOperation.EQUAL, 1);
         List<Post> alicePosts = db.posts.select(postCondition);
         System.out.println("Alice's posts: " + alicePosts.size());
         
         // Delete inactive users
-        ComparisonCondition inactiveCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, "false");
+        ComparisonCondition inactiveCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, false);
         int deleted = db.users.delete(inactiveCondition);
         System.out.println("Deleted users: " + deleted);
         
@@ -690,13 +690,13 @@ public static void main(String[] args) {
 
 ### ClassCastException: String cannot be cast to Integer
 
-**Problem:** Condition values must match field types
+**Problem:** Condition values should match field types for type safety
 
 ```java
-// ❌ Wrong - passing string for int field
+// ⚠️ String values work but require parsing
 new ComparisonCondition("age", ComparisonOperation.EQUAL, "20");
 
-// ✅ Correct - use the actual type
+// ✅ Recommended - use the actual type for type safety
 new ComparisonCondition("age", ComparisonOperation.EQUAL, 20);
 ```
 
