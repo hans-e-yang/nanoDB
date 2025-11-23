@@ -1,4 +1,76 @@
-A basic database that supports CRUD operations of Structs as Rows, written in Java. 
+A basic database that supports CRUD operations of Structs as Rows, written in Java.
+
+## Quick Start
+
+NanoDB provides two ways to interact with the database:
+
+### CLI (Command-Line Interface)
+Execute SQL-like commands interactively or from scripts:
+
+```bash
+# Run the CLI
+java -jar nanodb-cli.jar
+
+# Example commands
+nanodb> CREATE TABLE users (id INT, name VARCHAR, age INT);
+nanodb> INSERT INTO users VALUES (1, 'Alice', 25);
+nanodb> SELECT * FROM users WHERE age > 18;
+nanodb> UPDATE users SET age = 26 WHERE id = 1;
+nanodb> DELETE FROM users WHERE age < 18;
+```
+
+**For detailed CLI usage, see [CLI_USER_GUIDE.md](CLI_USER_GUIDE.md)**
+
+### ORM (Object-Relational Mapping)
+Use type-safe Java objects for database operations:
+
+```java
+import org.nanodb.orm.*;
+import org.nanodb.internal.condition.*;
+
+// Define your model
+public class User extends BaseModel {
+    public int id;
+    public String name;
+    public int age;
+    public User() {}
+}
+
+// Create database
+public class MyDatabase extends NanoDb {
+    public Table<User> users;
+    
+    public MyDatabase(String filename) throws IOException, IllegalAccessException {
+        super(filename);
+    }
+}
+
+// Use it
+MyDatabase db = new MyDatabase("myapp.db");
+
+// Insert
+db.users.insert(new User(1, "Alice", 25));
+
+// Select
+ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_THAN, 18);
+List<User> adults = db.users.select(condition);
+
+// Update
+db.users.update(
+    new ComparisonCondition("id", ComparisonOperation.EQUAL, 1),
+    user -> { user.age = 26; return user; }
+);
+
+// Delete
+db.users.delete(new ComparisonCondition("age", ComparisonOperation.LESS_THAN, 18));
+```
+
+**For detailed ORM usage, see [ORM_USER_GUIDE.md](ORM_USER_GUIDE.md)**
+
+### Building from Source
+See [COMPILATION_GUIDE.md](COMPILATION_GUIDE.md) for instructions on compiling both JAR files.
+
+---
 
 ## Architecture
 The code is seperated into the backend system and frontend interface. 
