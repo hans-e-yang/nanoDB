@@ -16,15 +16,11 @@ public class DataTypeSerializerTest extends SerializerTest<byte[], DataType<?>> 
         return DataTypeSerializer.getInstance();
     }
 
-
-    // Specifically for this test, we need to define our own testDeserializedProperly
-    protected <T> DataType<T> testDeserializedProperly(DataType<T> d) {
-        DataType<T> serialized = (DataType<T>) serializer.serialize(serializer.deserialize(d));
-        assertTrue(DataTypeComparer.compare(
-                d,
-                serialized
-        ));
-        return d;
+    // Override parent version instead of overloading with a generic one to avoid ambiguity.
+    @Override
+    protected void testDeserializedProperly(DataType<?> d) {
+        DataType<?> serialized = serializer.serialize(serializer.deserialize(d));
+        assertTrue(DataTypeComparer.compare(d, serialized));
     }
 
     @Test

@@ -13,6 +13,11 @@ public class VarCharType implements DataType<String> {
 
     @Override
     public String fromBytes(byte[] bytes, int offset) {
+        // Explicit bounds check to produce predictable ArrayIndexOutOfBoundsException
+        if (offset < 0 || offset + length > bytes.length) {
+            throw new ArrayIndexOutOfBoundsException(
+                    "Requested range offset=" + offset + ", length=" + length + " exceeds array length=" + bytes.length);
+        }
         return new String(bytes, offset, length, StandardCharsets.UTF_8).trim(); // Convert bytes to String
     }
 
