@@ -11,6 +11,24 @@ import java.util.Map;
 
 public class StatementParser {
 
+    /**
+     * Parse a SQL statement string and return a Statement object
+     * 
+     * @param input The SQL statement string to parse
+     * @return A Statement object representing the parsed statement
+     * @throws RuntimeException if the statement cannot be parsed
+     */
+    public static Statement parse(String input) {
+        Statement statement = new Statement();
+        PrepareResult result = prepareStatement(input, statement);
+
+        if (result != PrepareResult.SUCCESS) {
+            throw new RuntimeException("Failed to parse statement: " + input + " (Result: " + result + ")");
+        }
+
+        return statement;
+    }
+
     public static PrepareResult prepareStatement(String input, Statement statement) {
         String inputLower = input.trim().toLowerCase();
         input = input.trim();
@@ -18,25 +36,25 @@ public class StatementParser {
             // Parse: CREATE TABLE table_name (col1 TYPE, col2 TYPE, ...)
             statement.type = StatementType.CREATE_TABLE;
             String rest = input.substring(13).trim();
-            
+
             int openParen = rest.indexOf('(');
             if (openParen == -1) {
                 // CREATE TABLE without column definitions is a syntax error
                 return PrepareResult.SYNTAX_ERROR;
             }
-            
+
             statement.tableName = rest.substring(0, openParen).trim();
-            
+
             int closeParen = rest.lastIndexOf(')');
             if (closeParen == -1) {
                 return PrepareResult.SYNTAX_ERROR;
             }
-            
+
             String columnsStr = rest.substring(openParen + 1, closeParen).trim();
             String[] columnDefs = columnsStr.split(",");
-            
+
             List<Pair<String, DataType<?>>> fields = new ArrayList<>();
-            
+
             for (String columnDef : columnDefs) {
                 String[] parts = columnDef.trim().split("\\s+");
                 if (parts.length != 2) {
@@ -44,10 +62,10 @@ public class StatementParser {
                 }
                 String columnName = parts[0].trim();
                 String columnType = parts[1].trim().toLowerCase();
-                
+
                 // Map type string to DataType instance
                 DataType<?> dataType;
-                
+
                 if (columnType.equals("int")) {
                     dataType = new Int32Type();
                 } else if (columnType.startsWith("varchar(") && columnType.endsWith(")")) {
@@ -67,12 +85,12 @@ public class StatementParser {
                 } else {
                     return PrepareResult.SYNTAX_ERROR;
                 }
-                
+
                 fields.add(new Pair<>(columnName, dataType));
             }
-            
+
             statement.tableSchema = new StructType(fields);
-            
+
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("drop table ")) {
             statement.type = StatementType.DROP_TABLE;
@@ -81,17 +99,17 @@ public class StatementParser {
         } else if (inputLower.startsWith("insert into ")) {
             // Parse: INSERT INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
             String rest = input.substring(12).trim();
-            
+
             // Find table name (before opening parenthesis or VALUES)
             int openParen = rest.indexOf('(');
             int valuesIndex = rest.toLowerCase().indexOf("values");
-            
+
             if (openParen == -1 || valuesIndex == -1) {
                 return PrepareResult.SYNTAX_ERROR;
             }
-            
+
             statement.tableName = rest.substring(0, openParen).trim();
-            
+
             // Extract column names
             int closeParen = rest.indexOf(')', openParen);
             if (closeParen == -1) {
@@ -99,7 +117,7 @@ public class StatementParser {
             }
             String columnsStr = rest.substring(openParen + 1, closeParen).trim();
             String[] columns = columnsStr.split(",");
-            
+
             // Extract values
             String valuesStr = rest.substring(valuesIndex + 6).trim(); // Skip "values"
             int valuesOpen = valuesStr.indexOf('(');
@@ -109,11 +127,11 @@ public class StatementParser {
             }
             String valuesContent = valuesStr.substring(valuesOpen + 1, valuesClose).trim();
             String[] values = valuesContent.split(",");
-            
+
             if (columns.length != values.length) {
                 return PrepareResult.SYNTAX_ERROR;
             }
-            
+
             // Build the valuesToInsert map (keep as strings)
             Map<String, String> valuesToInsert = new HashMap<>();
             for (int i = 0; i < columns.length; i++) {
@@ -125,22 +143,23 @@ public class StatementParser {
                 }
                 valuesToInsert.put(col, val);
             }
-            
+
             statement.valuesToInsert = valuesToInsert;
             statement.type = StatementType.INSERT;
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("select ")) {
             int fromIndex = inputLower.indexOf(" from ");
-            if (fromIndex == -1) return PrepareResult.SYNTAX_ERROR;
+            if (fromIndex == -1)
+                return PrepareResult.SYNTAX_ERROR;
             String columnsStr = input.substring(7, fromIndex).trim();
             String rest = input.substring(fromIndex + 6).trim();
             String[] whereParts = rest.split("(?i) where ");
-            
+
             // Check for LIMIT clause
             String tableAndLimit = whereParts[0].trim();
             String[] limitParts = tableAndLimit.split("(?i) limit ");
             statement.tableName = limitParts[0].trim();
-            
+
             if (limitParts.length > 1) {
                 try {
                     statement.limit = Integer.parseInt(limitParts[1].trim());
@@ -151,7 +170,7 @@ public class StatementParser {
                     return PrepareResult.SYNTAX_ERROR;
                 }
             }
-            
+
             statement.type = StatementType.SELECT;
             if (columnsStr.equals("*")) {
                 statement.columns = null; // null means all
@@ -190,13 +209,15 @@ public class StatementParser {
             String[] whereParts = input.split("(?i) where ");
             String updatePart = whereParts[0];
             int setIndex = updatePart.toLowerCase().indexOf(" set ");
-            if (setIndex == -1) return PrepareResult.SYNTAX_ERROR;
+            if (setIndex == -1)
+                return PrepareResult.SYNTAX_ERROR;
             statement.tableName = updatePart.substring(7, setIndex).trim();
             String setStr = updatePart.substring(setIndex + 5).trim();
             String[] setPairs = setStr.split(",");
             for (String pair : setPairs) {
                 String[] kv = pair.trim().split("=");
-                if (kv.length != 2) return PrepareResult.SYNTAX_ERROR;
+                if (kv.length != 2)
+                    return PrepareResult.SYNTAX_ERROR;
                 String col = kv[0].trim();
                 String val = kv[1].trim();
                 // Remove quotes if present but keep as string
@@ -232,12 +253,12 @@ public class StatementParser {
         } else if (inputLower.startsWith("delete from ")) {
             String[] whereParts = input.split("(?i) where ");
             String deletePart = whereParts[0];
-            
+
             // Check for LIMIT clause in DELETE without WHERE
             String tableAndLimit = deletePart.substring(12).trim();
             String[] limitParts = tableAndLimit.split("(?i) limit ");
             statement.tableName = limitParts[0].trim();
-            
+
             if (limitParts.length > 1) {
                 try {
                     statement.limit = Integer.parseInt(limitParts[1].trim());
@@ -248,7 +269,7 @@ public class StatementParser {
                     return PrepareResult.SYNTAX_ERROR;
                 }
             }
-            
+
             statement.type = StatementType.DELETE;
             if (whereParts.length > 1) {
                 // Parse WHERE clause - may contain LIMIT
@@ -299,7 +320,7 @@ public class StatementParser {
         str = str.trim();
         ComparisonOperation op = null;
         int opIndex = -1;
-        
+
         // Check for two-character operators first
         if ((opIndex = str.indexOf(">=")) > 0) {
             op = ComparisonOperation.GREATER_EQUALS;
@@ -320,21 +341,22 @@ public class StatementParser {
         } else if ((opIndex = str.indexOf('<')) > 0) {
             op = ComparisonOperation.LESS_THAN;
         }
-        
+
         if (opIndex == -1 || op == null) {
             throw new RuntimeException("Invalid condition");
         }
-        
+
         String col = str.substring(0, opIndex).trim();
         int valStart = opIndex;
-        if (op == ComparisonOperation.GREATER_EQUALS || op == ComparisonOperation.LESS_EQUALS || op == ComparisonOperation.NOT_EQUALS) {
+        if (op == ComparisonOperation.GREATER_EQUALS || op == ComparisonOperation.LESS_EQUALS
+                || op == ComparisonOperation.NOT_EQUALS) {
             valStart += 2;
         } else if (op == ComparisonOperation.LIKE) {
             valStart += 6; // " like ".length()
         } else {
             valStart += 1;
         }
-        
+
         String val = str.substring(valStart).trim();
         if (val.startsWith("'") && val.endsWith("'")) {
             val = val.substring(1, val.length() - 1);
