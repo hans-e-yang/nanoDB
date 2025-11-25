@@ -12,28 +12,38 @@ public class BooleanTypeTest {
 
     @Test
     public void testToBytesTrue() {
-        byte[] bytes = type.toBytes(true);
-        assertEquals(1, bytes.length);
-        assertEquals(1, bytes[0]);
+        boolean original = true;
+        byte[] bytes = type.toBytes(original);
+        boolean afterSerialization = type.fromBytes(bytes, 0);
+        assertEquals(original, afterSerialization);
+        assertEquals(type.byteSize(), bytes.length);
     }
 
     @Test
     public void testToBytesFalse() {
-        byte[] bytes = type.toBytes(false);
-        assertEquals(1, bytes.length);
-        assertEquals(0, bytes[0]);
+        boolean original = false;
+        byte[] bytes = type.toBytes(original);
+        boolean afterSerialization = type.fromBytes(bytes, 0);
+        assertEquals(original, afterSerialization);
+        assertEquals(type.byteSize(), bytes.length);
     }
 
     @Test
     public void testFromBytesTrue() {
         byte[] bytes = { 1 };
-        assertTrue(type.fromBytes(bytes, 0));
+        boolean value = type.fromBytes(bytes, 0);
+        byte[] serialized = type.toBytes(value);
+        assertArrayEquals(bytes, serialized);
+        assertTrue(value);
     }
 
     @Test
     public void testFromBytesFalse() {
         byte[] bytes = { 0 };
-        assertFalse(type.fromBytes(bytes, 0));
+        boolean value = type.fromBytes(bytes, 0);
+        byte[] serialized = type.toBytes(value);
+        assertArrayEquals(bytes, serialized);
+        assertFalse(value);
     }
 
     @Test
@@ -51,7 +61,6 @@ public class BooleanTypeTest {
     public void testVisitorPattern() {
         TestDataTypeVisitor visitor = new TestDataTypeVisitor();
         String result = type.accept(visitor);
-        // TestDataTypeVisitor returns null for BooleanType, so for coverage, check null
-        assertNull(result);
+        assertEquals("visited", result);
     }
 }

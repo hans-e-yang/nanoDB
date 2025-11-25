@@ -8,23 +8,37 @@ public class TestDataTypeVisitor implements DataTypeVisitor<String> {
     private static final String RESULT = "visited";
 
     @Override
-    public <T2> String visit(ArrayType<T2> d) { return RESULT; }
+    public <T2> String visit(ArrayType<T2> d) {
+        return RESULT;
+    }
 
     @Override
-    public String visit(BooleanType d) { return null; }
+    public String visit(BooleanType d) {
+        return RESULT;
+    }
 
     @Override
-    public String visit(BytesType d) { return RESULT; }
+    public String visit(BytesType d) {
+        return RESULT;
+    }
 
     @Override
-    public String visit(DateType d) { return RESULT; }
+    public String visit(DateType d) {
+        return RESULT;
+    }
 
     @Override
-    public String visit(Int32Type d) { return RESULT; }
+    public String visit(Int32Type d) {
+        return RESULT;
+    }
 
     @Override
-    public String visit(StructType d) { return RESULT; }
+    public String visit(StructType d) {
+        return RESULT;
+    }
 
     @Override
-    public String visit(VarCharType d) { return RESULT; }
+    public String visit(VarCharType d) {
+        return RESULT;
+    }
 }

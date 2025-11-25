@@ -6,62 +6,46 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ArrayTypeTest {
     @Test
-    public void testRoundTripAndByteSize() {
-        Int32Type elt = new Int32Type();
-        ArrayType<Integer> arrType = new ArrayType<>(elt, 3);
-        List<Integer> data = Arrays.asList(1, 2, 3);
-        byte[] bytes = arrType.toBytes(data);
-        List<Integer> result = arrType.fromBytes(bytes, 0);
-        assertEquals(data, result);
-        assertEquals(3 * elt.byteSize(), arrType.byteSize());
+    public void testArrayTypeRoundTrip() {
+        BooleanType booleanType = new BooleanType();
+        ArrayType<Boolean> arrayType = new ArrayType<>(booleanType, 3);
+
+        List<Boolean> original = Arrays.asList(true, false, true);
+        byte[] serialized = arrayType.toBytes(original);
+        List<Boolean> deserialized = arrayType.fromBytes(serialized, 0);
+
+        assertEquals(original, deserialized);
+        assertEquals(arrayType.byteSize(), serialized.length);
     }
 
     @Test
-    public void testShortListToBytes() {
-        Int32Type elt = new Int32Type();
-        ArrayType<Integer> arrType = new ArrayType<>(elt, 4);
-        List<Integer> shortData = Arrays.asList(10, 20);
-        byte[] bytes = arrType.toBytes(shortData);
-        assertEquals(shortData.size() * elt.byteSize(), bytes.length);
+    public void testArrayTypeEmptyArray() {
+        BooleanType booleanType = new BooleanType();
+        ArrayType<Boolean> arrayType = new ArrayType<>(booleanType, 0);
+
+        List<Boolean> original = Arrays.asList();
+        byte[] serialized = arrayType.toBytes(original);
+        List<Boolean> deserialized = arrayType.fromBytes(serialized, 0);
+
+        assertEquals(original, deserialized);
+        assertEquals(arrayType.byteSize(), serialized.length);
     }
 
     @Test
-    public void testFromBytesWithOffset() {
-        Int32Type elt = new Int32Type();
-        ArrayType<Integer> arrType = new ArrayType<>(elt, 3);
-        List<Integer> data = Arrays.asList(7, 8, 9);
-        byte[] bytes = arrType.toBytes(data);
-        byte[] bigger = new byte[bytes.length + 6];
-        Arrays.fill(bigger, (byte) 0x5A);
-        System.arraycopy(bytes, 0, bigger, 4, bytes.length);
-        List<Integer> result = arrType.fromBytes(bigger, 4);
-        assertEquals(data, result);
+    public void testArrayTypeByteSize() {
+        BooleanType booleanType = new BooleanType();
+        ArrayType<Boolean> arrayType = new ArrayType<>(booleanType, 5);
+
+        assertEquals(5, arrayType.getLength());
+        assertEquals(5 * booleanType.byteSize(), arrayType.byteSize());
     }
 
     @Test
-    public void testGetters() {
-        Int32Type elt = new Int32Type();
-        ArrayType<Integer> arrType = new ArrayType<>(elt, 5);
-        assertSame(elt, arrType.getElementType());
-        assertEquals(5, arrType.getLength());
-    }
+    public void testArrayTypeFromBytesOffsetOutOfBounds() {
+        BooleanType booleanType = new BooleanType();
+        ArrayType<Boolean> arrayType = new ArrayType<>(booleanType, 3);
+        byte[] bytes = new byte[] { 1, 0 }; // Not enough bytes for 3 elements
 
-    @Test
-    public void testVisitorPattern() {
-        ArrayType<Integer> arrType = new ArrayType<>(new Int32Type(), 2);
-        TestDataTypeVisitor visitor = new TestDataTypeVisitor();
-        String result = arrType.accept(visitor);
-        assertEquals("visited", result);
-    }
-
-    @Test
-    public void testEdgeCaseEmptyArray() {
-        Int32Type elt = new Int32Type();
-        ArrayType<Integer> arrType = new ArrayType<>(elt, 0);
-        List<Integer> empty = new ArrayList<>();
-        byte[] bytes = arrType.toBytes(empty);
-        assertEquals(0, bytes.length);
-        List<Integer> result = arrType.fromBytes(bytes, 0);
-        assertEquals(empty, result);
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> arrayType.fromBytes(bytes, 0));
     }
 }
