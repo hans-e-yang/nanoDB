@@ -176,6 +176,20 @@ public class OrConditionTest {
         assertTrue(result);
     }
 
+    @Test
+    public void testAccept_UsesDefaultTrueWhenNoSequenceProvided() {
+        // No call to setResultSequence -> results == null, fallback branch in visitComparison
+        ComparisonCondition left = new ComparisonCondition("any", ComparisonOperation.EQUAL, "x");
+        ComparisonCondition right = new ComparisonCondition("any", ComparisonOperation.EQUAL, "y");
+        OrCondition orCondition = new OrCondition(left, right);
+
+        boolean result = orCondition.accept(mockVisitor);
+
+        // Fallback path returns true and increments visitCount
+        assertTrue(result);
+        assertTrue(mockVisitor.visitCount >= 1);
+    }
+
     // Mock visitor that returns a sequence of boolean values
     private static class MockConditionVisitor implements ConditionVisitor {
         private boolean[] results;
@@ -189,8 +203,11 @@ public class OrConditionTest {
         @Override
         public boolean visitComparison(ComparisonCondition comparisonCondition) {
             if (results != null && visitCount < results.length) {
-                return results[visitCount++];
+                boolean result = results[visitCount];
+                visitCount++;
+                return result;
             }
+            // No sequence or sequence exhausted: still count the visit
             visitCount++;
             return true;
         }

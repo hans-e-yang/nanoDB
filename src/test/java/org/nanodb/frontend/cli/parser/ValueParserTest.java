@@ -105,6 +105,19 @@ public class ValueParserTest {
         assertNull(result);
     }
 
+    @Test
+    public void testParseValue_UnsupportedType() {
+        // BooleanType isn't handled explicitly; expect ParseException
+        assertThrows(ParseException.class, () -> ValueParser.parseValue("true", new BooleanType()));
+    }
+
+    @Test
+    public void testParseValue_Date_WithSpacesTrimmed() throws ParseException {
+        Object result = ValueParser.parseValue(" 2025-11-13 ", new DateType());
+        assertNotNull(result);
+        assertTrue(result instanceof Date);
+    }
+
     // ==================== parseValues() tests ====================
 
     @Test
@@ -177,6 +190,26 @@ public class ValueParserTest {
         Map<String, Object> result = ValueParser.parseValues(input, testSchema);
         
         assertEquals(0, result.size());
+    }
+
+    @Test
+    public void testParseValues_NullValueInMap() throws ParseException {
+        Map<String, String> input = new HashMap<>();
+        input.put("name", null); // Should parse to null
+        Map<String, Object> result = ValueParser.parseValues(input, testSchema);
+        assertTrue(result.containsKey("name"));
+        assertNull(result.get("name"));
+    }
+
+    @Test
+    public void testParseValues_UnsupportedSchemaType() {
+        // Build a schema with a BooleanType to trigger unsupported branch
+        List<Pair<String, DataType<?>>> fields = new ArrayList<>();
+        fields.add(new Pair<>("flag", new BooleanType()));
+        StructType schema = new StructType(fields);
+        Map<String, String> input = new HashMap<>();
+        input.put("flag", "true");
+        assertThrows(ParseException.class, () -> ValueParser.parseValues(input, schema));
     }
 
     // ==================== parseConditionValues() tests ====================
@@ -285,6 +318,31 @@ public class ValueParserTest {
         assertThrows(ParseException.class, () -> {
             ValueParser.parseConditionValues(condition, testSchema);
         });
+    }
+
+    @Test
+    public void testParseConditionValues_NumericValueAlreadyParsed() throws ParseException {
+        // value provided as Integer not String; should be re-parsed via toString
+        ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.EQUAL, 123); // Integer instance
+        Condition parsed = ValueParser.parseConditionValues(condition, testSchema);
+        assertTrue(parsed instanceof ComparisonCondition);
+        ComparisonCondition parsedComp = (ComparisonCondition) parsed;
+        assertEquals(123, parsedComp.getValue());
+        assertTrue(parsedComp.getValue() instanceof Integer);
+    }
+
+    // Dummy condition type not handled explicitly to cover passthrough branch
+    private static class DummyCondition implements Condition {
+        @Override
+        public boolean accept(ConditionVisitor visitor) { return true; }
+    }
+
+    @Test
+    public void testParseConditionValues_UnhandledConditionPassthrough() throws ParseException {
+        DummyCondition dummy = new DummyCondition();
+        Condition parsed = ValueParser.parseConditionValues(dummy, testSchema);
+        // Should be identical instance because parser doesn't transform unknown types
+        assertSame(dummy, parsed);
     }
 
     @Test

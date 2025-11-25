@@ -415,6 +415,53 @@ public class MainTest {
                    "Should display exit instructions");
     }
 
+    // ==================== Additional Coverage Tests ====================
+
+    @Test
+    public void testEOFWithoutAnyInput() {
+        // Provide empty input stream (no newline) to hit scanner.hasNextLine() == false path
+        String input = ""; // EOF immediately
+        System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+        String dbFile = tempDir.resolve("test_eof.db").toString();
+        Main.main(new String[]{dbFile});
+
+        String output = outputStream.toString();
+        // Should show exactly one prompt and no Goodbye message
+        assertEquals(1, countOccurrences(output, "nanodb>"), "Should show single prompt before EOF");
+        assertFalse(output.contains("Goodbye!"), "EOF path should not print goodbye");
+    }
+
+    @Test
+    public void testSelectSpecificColumn() {
+        String input = "CREATE TABLE students (id int, name varchar(50))\n" +
+                "INSERT INTO students (id, name) VALUES (1, 'Alice')\n" +
+                "SELECT id FROM students\n" +
+                "exit\n";
+        System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+        String dbFile = tempDir.resolve("test_select_col.db").toString();
+        Main.main(new String[]{dbFile});
+
+        String output = outputStream.toString();
+        // Expect output to contain the value in parentheses with only id
+        assertTrue(output.contains("(1)"), "Should display only the id column");
+    }
+
+    @Test
+    public void testSelectUnknownColumnThrows() {
+        String input = "CREATE TABLE students (id int, name varchar(50))\n" +
+                "INSERT INTO students (id, name) VALUES (1, 'Alice')\n" +
+                "SELECT unknown FROM students\n" +
+                "exit\n";
+        System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+        String dbFile = tempDir.resolve("test_select_unknown.db").toString();
+        // Expect RuntimeException from formatRow when column doesn't exist
+        assertThrows(RuntimeException.class, () -> Main.main(new String[]{dbFile}),
+                "Selecting unknown column should throw runtime exception");
+    }
+
     // ==================== Helper Methods ====================
 
     /**
