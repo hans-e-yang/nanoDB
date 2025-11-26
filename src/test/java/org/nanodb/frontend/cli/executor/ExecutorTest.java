@@ -163,6 +163,46 @@ public class ExecutorTest {
         assertEquals(ExecuteResult.DATA_TYPE_MISMATCH, result);
     }
     
+    @Test
+    public void testInsert_PartialColumns() throws IOException, MissingWhereConditionException {
+        // Test INSERT with missing columns - they should be filled with default values
+        createTestTable("courses");
+        
+        statement.type = StatementType.INSERT;
+        statement.tableName = "courses";
+        statement.valuesToInsert.put("id", "1");
+        // name column is not provided
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Verify insertion with default value for missing column (empty string for varchar)
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals(1, rows.size());
+        assertEquals(1, rows.get(0).get("id"));
+        assertEquals("", rows.get(0).get("name")); // null is stored as empty string
+    }
+    
+    @Test
+    public void testInsert_NullValue() throws IOException, MissingWhereConditionException {
+        // Test INSERT with explicit null value
+        createTestTable("courses");
+        
+        statement.type = StatementType.INSERT;
+        statement.tableName = "courses";
+        statement.valuesToInsert.put("id", "1");
+        statement.valuesToInsert.put("name", null); // explicit null
+        
+        ExecuteResult result = Executor.execute(statement, db);
+        assertEquals(ExecuteResult.SUCCESS, result);
+        
+        // Verify insertion - null is stored as empty string for varchar
+        List<Map<String, Object>> rows = db.getTable("courses").selectAll();
+        assertEquals(1, rows.size());
+        assertEquals(1, rows.get(0).get("id"));
+        assertEquals("", rows.get(0).get("name")); // null is stored as empty string
+    }
+    
     // ==================== SELECT ====================
     
     @Test

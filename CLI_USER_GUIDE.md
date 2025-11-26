@@ -94,6 +94,10 @@ INSERT INTO <table_name> (<column1>, <column2>, ...) VALUES (<value1>, <value2>,
 INSERT INTO students (id, name, email) VALUES (1, 'John Doe', 'john@example.com')
 INSERT INTO students (id, name, email) VALUES (2, John, john@test.com)
 INSERT INTO courses (courseId, courseName, startDate) VALUES (101, 'Database Systems', '2025-01-15')
+
+-- Insert with NULL values
+INSERT INTO students (id, name, email) VALUES (3, 'Jane', null)
+INSERT INTO students (id, name) VALUES (4, 'Bob')  -- email will be empty
 ```
 
 **Notes:**
@@ -102,6 +106,11 @@ INSERT INTO courses (courseId, courseName, startDate) VALUES (101, 'Database Sys
 - The number of columns must match the number of values
 - Values are type-checked against the table schema
 - Date format: `YYYY-MM-DD`
+- **NULL values**: Use the keyword `null` (case-insensitive) to insert a null value
+- **Partial inserts**: You can omit columns; missing columns are stored with default values:
+  - `varchar`: empty string (`""`)
+  - `int`: `0`
+  - `date`: Unix epoch (`1970-01-01`)
 
 ---
 
@@ -186,6 +195,9 @@ UPDATE students SET age = 20 WHERE age < 20 LIMIT 10
 -- Complex WHERE conditions
 UPDATE students SET email = 'updated@test.com' WHERE id > 5 AND age < 25
 UPDATE students SET name = 'Anonymous' WHERE email LIKE '%@temp.com'
+
+-- Update with NULL value (sets to default value)
+UPDATE students SET email = null WHERE id = 5
 ```
 
 **Notes:**
@@ -193,6 +205,7 @@ UPDATE students SET name = 'Anonymous' WHERE email LIKE '%@temp.com'
 - Multiple columns can be updated in a single statement
 - LIMIT restricts the number of rows updated
 - Values are type-checked against the table schema
+- **NULL values**: Use the keyword `null` (case-insensitive) to set a column to its default value
 
 ---
 

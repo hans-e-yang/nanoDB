@@ -142,7 +142,12 @@ public class StatementParser {
                 if (val.startsWith("'") && val.endsWith("'")) {
                     val = val.substring(1, val.length() - 1);
                 }
-                valuesToInsert.put(col, val);
+                // Handle null keyword (case-insensitive)
+                if (val.equalsIgnoreCase("null")) {
+                    valuesToInsert.put(col, null);
+                } else {
+                    valuesToInsert.put(col, val);
+                }
             }
             statement.valuesToInsert = valuesToInsert;
 
@@ -225,7 +230,12 @@ public class StatementParser {
                 if (val.startsWith("'") && val.endsWith("'")) {
                     val = val.substring(1, val.length() - 1);
                 }
-                statement.setValues.put(col, val);
+                // Handle null keyword (case-insensitive)
+                if (val.equalsIgnoreCase("null")) {
+                    statement.setValues.put(col, null);
+                } else {
+                    statement.setValues.put(col, val);
+                }
             }
             statement.type = StatementType.UPDATE;
             if (whereParts.length > 1) {

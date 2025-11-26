@@ -229,6 +229,44 @@ public class StatementParserTest {
         assertEquals(PrepareResult.SYNTAX_ERROR, result);
     }
 
+    @Test
+    public void testInsert_NullValue() {
+        // Test INSERT with null keyword (lowercase)
+        PrepareResult result = StatementParser.prepareStatement("insert into courses (id, name) values (1, null)", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.INSERT, statement.type);
+        assertEquals("1", statement.valuesToInsert.get("id"));
+        assertNull(statement.valuesToInsert.get("name"));
+        assertTrue(statement.valuesToInsert.containsKey("name"));
+    }
+
+    @Test
+    public void testInsert_NullValueUpperCase() {
+        // Test INSERT with NULL keyword (uppercase)
+        PrepareResult result = StatementParser.prepareStatement("insert into courses (id, name) values (1, NULL)", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertNull(statement.valuesToInsert.get("name"));
+        assertTrue(statement.valuesToInsert.containsKey("name"));
+    }
+
+    @Test
+    public void testInsert_NullValueMixedCase() {
+        // Test INSERT with Null keyword (mixed case)
+        PrepareResult result = StatementParser.prepareStatement("insert into courses (id, name) values (1, Null)", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertNull(statement.valuesToInsert.get("name"));
+    }
+
+    @Test
+    public void testInsert_MultipleNullValues() {
+        // Test INSERT with multiple null values
+        PrepareResult result = StatementParser.prepareStatement("insert into courses (id, name, code) values (null, null, null)", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertNull(statement.valuesToInsert.get("id"));
+        assertNull(statement.valuesToInsert.get("name"));
+        assertNull(statement.valuesToInsert.get("code"));
+    }
+
     // ==================== SELECT Tests ====================
 
     @Test
@@ -415,6 +453,34 @@ public class StatementParserTest {
         // Invalid WHERE condition
         PrepareResult result = StatementParser.prepareStatement("update courses set courseName = NewName where badcondition", statement);
         assertEquals(PrepareResult.SYNTAX_ERROR, result);
+    }
+
+    @Test
+    public void testUpdate_NullValue() {
+        // Test UPDATE with null keyword (lowercase)
+        PrepareResult result = StatementParser.prepareStatement("update courses set name = null where id = 1", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertEquals(StatementType.UPDATE, statement.type);
+        assertNull(statement.setValues.get("name"));
+        assertTrue(statement.setValues.containsKey("name"));
+    }
+
+    @Test
+    public void testUpdate_NullValueUpperCase() {
+        // Test UPDATE with NULL keyword (uppercase)
+        PrepareResult result = StatementParser.prepareStatement("update courses set name = NULL", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertNull(statement.setValues.get("name"));
+        assertTrue(statement.setValues.containsKey("name"));
+    }
+
+    @Test
+    public void testUpdate_MultipleColumnsWithNull() {
+        // Test UPDATE with multiple columns, some null
+        PrepareResult result = StatementParser.prepareStatement("update courses set name = null, code = CS101", statement);
+        assertEquals(PrepareResult.SUCCESS, result);
+        assertNull(statement.setValues.get("name"));
+        assertEquals("CS101", statement.setValues.get("code"));
     }
 
     // ==================== DELETE Tests ====================

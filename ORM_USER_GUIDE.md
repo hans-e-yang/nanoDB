@@ -240,6 +240,27 @@ List<Student> students = Arrays.asList(
 db.students.insert(students);
 ```
 
+#### Handling Null Fields
+
+When inserting records with null fields, NanoDB automatically converts them to default values:
+
+```java
+Student student = new Student();
+student.id = 1;
+student.name = "John";
+// email is null, age is 0 (default for int)
+db.students.insert(student);
+// email will be stored as empty string "", age as 0
+```
+
+**Default values for null fields:**
+- `String`: empty string (`""`)
+- `int`: `0`
+- `boolean`: `false`
+- `Date`: Unix epoch (`1970-01-01`)
+- `byte[]`: empty array
+- `List<T>`: empty list
+
 ### Select Operations
 
 #### Select All Records
@@ -319,6 +340,8 @@ int updated = db.students.update(
     }
 );
 ```
+
+**Note on null values in updates:** When updating a record, if you set a field to `null`, it will be automatically converted to its default value (see Insert Operations for the list of defaults).
 
 ### Delete Operations
 

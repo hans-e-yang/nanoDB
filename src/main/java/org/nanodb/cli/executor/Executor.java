@@ -10,6 +10,7 @@ import org.nanodb.internal.condition.Condition;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,14 @@ public class Executor {
                     parsedInsertValues = ValueParser.parseValues(statement.valuesToInsert, schema);
                 } catch (ParseException e) {
                     return ExecuteResult.DATA_TYPE_MISMATCH;
+                }
+                // Fill in missing columns with default values and convert nulls to defaults
+                for (var field : schema.getFields()) {
+                    String columnName = field.getKey();
+                    DataType<?> dataType = field.getValue();
+                    if (!parsedInsertValues.containsKey(columnName) || parsedInsertValues.get(columnName) == null) {
+                        parsedInsertValues.put(columnName, getDefaultValue(dataType));
+                    }
                 }
                 // We don't throw any errors in insert for now..
                 db.getTable(statement.tableName).insert(parsedInsertValues);
@@ -174,5 +183,26 @@ public class Executor {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    /**
+     * Get the default value for a given data type when null is provided.
+     * Used to convert null values to type-appropriate defaults since the
+     * internal storage system does not support null values directly.
+     * 
+     * @param dataType The data type to get a default value for
+     * @return The default value: empty string for VarChar, 0 for Int32, epoch date for Date
+     */
+    private static Object getDefaultValue(DataType<?> dataType) {
+        if (dataType instanceof VarCharType) {
+            return "";  // Empty string for VarChar
+        } else if (dataType instanceof Int32Type) {
+            return 0;   // Zero for integers
+        } else if (dataType instanceof DateType) {
+            return new Date(0);  // Unix epoch (1970-01-01) for dates
+        } else {
+            // For any other type, return empty string as fallback
+            return "";
+        }
     }
 }
