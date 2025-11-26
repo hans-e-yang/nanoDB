@@ -1,7 +1,7 @@
 package org.nanodb.internal.table;
 
 import org.junit.jupiter.api.Test;
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.chunker.SimpleMapChunker;
 import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;

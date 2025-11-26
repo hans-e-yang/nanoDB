@@ -1,6 +1,6 @@
 package org.nanodb.orm;
 
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.condition.Condition;
 import org.nanodb.internal.table.InternalTable;
 import org.nanodb.orm.internal.ClassMapSerializer;

@@ -2,7 +2,7 @@ package org.nanodb.orm;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.condition.Condition;
 import org.nanodb.internal.condition.ConditionVisitor;
 import org.nanodb.internal.primitives.Int32Type;

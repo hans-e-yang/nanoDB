@@ -1,6 +1,6 @@
 package org.nanodb.internal.table;
 
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.chunker.Chunker;
 import org.nanodb.internal.condition.Condition;
 import org.nanodb.internal.condition.ConditionVisitor;

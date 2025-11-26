@@ -7,7 +7,7 @@ import org.nanodb.cli.executor.ExecuteResult;
 import org.nanodb.cli.executor.Executor;
 import org.nanodb.cli.statement.Statement;
 import org.nanodb.cli.statement.StatementType;
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.chunker.FileChunker;
 import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;

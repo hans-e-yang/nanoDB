@@ -1,6 +1,6 @@
 package org.nanodb.internal.db;
 
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.condition.ComparisonCondition;
 import org.nanodb.internal.condition.ComparisonOperation;
 import org.nanodb.internal.primitives.*;

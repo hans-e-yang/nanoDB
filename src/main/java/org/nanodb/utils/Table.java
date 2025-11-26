@@ -1,6 +1,6 @@
 package org.nanodb.utils;
 
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.condition.BooleanCondition;
 import org.nanodb.internal.condition.Condition;
 

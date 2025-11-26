@@ -1,4 +1,4 @@
-package org.nanodb.internal;
+package org.nanodb.internal.exception;
 
 public class NanoDBException extends RuntimeException {
     public NanoDBException(String message) {

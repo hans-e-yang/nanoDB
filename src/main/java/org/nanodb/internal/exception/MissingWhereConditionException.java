@@ -1,6 +1,4 @@
-package org.nanodb.exception;
-
-import org.nanodb.internal.NanoDBException;
+package org.nanodb.internal.exception;
 
 public class MissingWhereConditionException extends NanoDBException {
     public MissingWhereConditionException(String message) {

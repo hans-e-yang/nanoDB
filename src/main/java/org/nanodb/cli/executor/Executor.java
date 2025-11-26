@@ -1,7 +1,7 @@
 package org.nanodb.cli.executor;
 
 import org.nanodb.cli.statement.Statement;
-import org.nanodb.exception.MissingWhereConditionException;
+import org.nanodb.internal.exception.MissingWhereConditionException;
 import org.nanodb.internal.db.*;
 import org.nanodb.internal.primitives.*;
 import org.nanodb.cli.parser.ValueParser;
