@@ -20,6 +20,7 @@ public class Executor {
         switch (statement.type) {
             case CREATE_TABLE:
                 if (db.createTable(statement.tableName, statement.tableSchema)) {
+                    System.out.println("Table '" + statement.tableName + "' created");
                     return ExecuteResult.SUCCESS;
                 } else {
                     return ExecuteResult.ERROR;
@@ -55,6 +56,7 @@ public class Executor {
                 }
                 // We don't throw any errors in insert for now..
                 db.getTable(statement.tableName).insert(parsedInsertValues);
+                System.out.println("Row inserted");
                 return ExecuteResult.SUCCESS;
 //                if (db.getTable(statement.tableName).insert(parsedInsertValues)) {
 //                    return ExecuteResult.SUCCESS;
