@@ -53,7 +53,7 @@ public class User extends BaseModel {
 
 ### 2. NanoDb
 
-The `NanoDb` class is the main entry point for your database. You create a subclass that defines your database schema by declaring `Table<T>` fields.
+The `NanoDb` class is the main entry point for your database. It implements `AutoCloseable`, so you should use try-with-resources or call `close()` when done. You create a subclass that defines your database schema by declaring `Table<T>` fields.
 
 ```java
 import org.nanodb.orm.NanoDb;
@@ -205,8 +205,10 @@ public class AppDatabase extends NanoDb {
 // Usage
 public class Main {
     public static void main(String[] args) throws Exception {
-        AppDatabase db = new AppDatabase("myapp.db");
-        // Database is ready to use!
+        try (AppDatabase db = new AppDatabase("myapp.db")) {
+            // Database is ready to use!
+            // ... perform operations
+        } // Database is automatically closed here
     }
 }
 ```
@@ -500,43 +502,43 @@ class BlogDatabase extends NanoDb {
 // Main Application
 public class BlogApp {
     public static void main(String[] args) throws Exception {
-        // Initialize database
-        BlogDatabase db = new BlogDatabase("blog.db");
-        
-        // Create users
-        User alice = new User(1, "alice", "alice@blog.com", 25);
-        User bob = new User(2, "bob", "bob@blog.com", 30);
-        db.users.insert(alice);
-        db.users.insert(bob);
-        
-        // Create posts
-        Post post1 = new Post(1, 1, "Hello World", "My first post!");
-        Post post2 = new Post(2, 1, "Java Tips", "Learn Java ORM...");
-        db.posts.insert(List.of(post1, post2));
-        
-        // Query active users
-        ComparisonCondition activeCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, true);
-        List<User> activeUsers = db.users.select(activeCondition);
-        System.out.println("Active users: " + activeUsers.size());
-        
-        // Update user age
-        ComparisonCondition userCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, 1);
-        db.users.update(userCondition, user -> {
-            user.age = 26;
-            return user;
-        });
-        
-        // Find posts by user
-        ComparisonCondition postCondition = new ComparisonCondition("userId", ComparisonOperation.EQUAL, 1);
-        List<Post> alicePosts = db.posts.select(postCondition);
-        System.out.println("Alice's posts: " + alicePosts.size());
-        
-        // Delete inactive users
-        ComparisonCondition inactiveCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, false);
-        int deleted = db.users.delete(inactiveCondition);
-        System.out.println("Deleted users: " + deleted);
-        
-        System.out.println("Blog application completed!");
+        // Initialize database with try-with-resources
+        try (BlogDatabase db = new BlogDatabase("blog.db")) {
+            // Create users
+            User alice = new User(1, "alice", "alice@blog.com", 25);
+            User bob = new User(2, "bob", "bob@blog.com", 30);
+            db.users.insert(alice);
+            db.users.insert(bob);
+            
+            // Create posts
+            Post post1 = new Post(1, 1, "Hello World", "My first post!");
+            Post post2 = new Post(2, 1, "Java Tips", "Learn Java ORM...");
+            db.posts.insert(List.of(post1, post2));
+            
+            // Query active users
+            ComparisonCondition activeCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, true);
+            List<User> activeUsers = db.users.select(activeCondition);
+            System.out.println("Active users: " + activeUsers.size());
+            
+            // Update user age
+            ComparisonCondition userCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, 1);
+            db.users.update(userCondition, user -> {
+                user.age = 26;
+                return user;
+            });
+            
+            // Find posts by user
+            ComparisonCondition postCondition = new ComparisonCondition("userId", ComparisonOperation.EQUAL, 1);
+            List<Post> alicePosts = db.posts.select(postCondition);
+            System.out.println("Alice's posts: " + alicePosts.size());
+            
+            // Delete inactive users
+            ComparisonCondition inactiveCondition = new ComparisonCondition("active", ComparisonOperation.EQUAL, false);
+            int deleted = db.users.delete(inactiveCondition);
+            System.out.println("Deleted users: " + deleted);
+            
+            System.out.println("Blog application completed!");
+        } // Database automatically closed here
     }
 }
 ```
@@ -658,17 +660,27 @@ try {
 
 ### 5. Close Resources Properly
 
-While NanoDB handles file closing internally, ensure your application exits cleanly:
+NanoDb implements `AutoCloseable`, so always close the database when done to release file handles:
 
 ```java
+// ✅ Recommended - use try-with-resources
 public static void main(String[] args) {
-    try {
-        AppDatabase db = new AppDatabase("app.db");
+    try (AppDatabase db = new AppDatabase("app.db")) {
         // ... use database
     } catch (Exception e) {
         e.printStackTrace();
     }
-    // Database file is closed when application exits
+    // Database is automatically closed
+}
+
+// ✅ Alternative - manual close
+public static void main(String[] args) throws Exception {
+    AppDatabase db = new AppDatabase("app.db");
+    try {
+        // ... use database
+    } finally {
+        db.close();
+    }
 }
 ```
 

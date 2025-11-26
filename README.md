@@ -13,7 +13,7 @@ java -jar nanodb-cli.jar
 
 # Example commands
 nanodb> CREATE TABLE users (id INT, name VARCHAR, age INT);
-nanodb> INSERT INTO users VALUES (1, 'Alice', 25);
+nanodb> INSERT INTO users (id, name, age) VALUES (1, 'Alice', 25);
 nanodb> SELECT * FROM users WHERE age > 18;
 nanodb> UPDATE users SET age = 26 WHERE id = 1;
 nanodb> DELETE FROM users WHERE age < 18;
@@ -46,23 +46,23 @@ public class MyDatabase extends NanoDb {
 }
 
 // Use it
-MyDatabase db = new MyDatabase("myapp.db");
+try (MyDatabase db = new MyDatabase("myapp.db")) {
+    // Insert
+    db.users.insert(new User(1, "Alice", 25));
 
-// Insert
-db.users.insert(new User(1, "Alice", 25));
+    // Select
+    ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_THAN, 18);
+    List<User> adults = db.users.select(condition);
 
-// Select
-ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperation.GREATER_THAN, 18);
-List<User> adults = db.users.select(condition);
+    // Update
+    db.users.update(
+        new ComparisonCondition("id", ComparisonOperation.EQUAL, 1),
+        user -> { user.age = 26; return user; }
+    );
 
-// Update
-db.users.update(
-    new ComparisonCondition("id", ComparisonOperation.EQUAL, 1),
-    user -> { user.age = 26; return user; }
-);
-
-// Delete
-db.users.delete(new ComparisonCondition("age", ComparisonOperation.LESS_THAN, 18));
+    // Delete
+    db.users.delete(new ComparisonCondition("age", ComparisonOperation.LESS_THAN, 18));
+}
 ```
 
 **For detailed ORM usage, see [ORM_USER_GUIDE.md](ORM_USER_GUIDE.md)**
