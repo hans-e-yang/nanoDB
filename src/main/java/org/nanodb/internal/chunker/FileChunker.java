@@ -133,6 +133,7 @@ public class FileChunker extends Chunker {
     }
 
     // Close the RandomAccessFile when done
+    @Override
     public void close() throws IOException {
         file.close();
     }

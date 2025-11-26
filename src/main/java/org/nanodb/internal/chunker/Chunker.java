@@ -62,4 +62,13 @@ public abstract class Chunker {
             ChunkPositionOutOfBoundsException,
             ChunkDataTooLargeException
     ;
+
+    /**
+     * Closes this chunker and releases any associated system resources.
+     * The default implementation does nothing.
+     * @throws java.io.IOException if an I/O error occurs
+     */
+    public void close() throws java.io.IOException {
+        // Default implementation does nothing - override in subclasses that need cleanup
+    }
 }

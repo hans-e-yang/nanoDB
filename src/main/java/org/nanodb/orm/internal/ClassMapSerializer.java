@@ -19,6 +19,9 @@ public class ClassMapSerializer<T extends BaseModel> implements Serializer<Map<S
         Map<String, Object> map = new HashMap<>();
         try {
             for (Field field : type.getDeclaredFields()) {
+                // Skip synthetic fields (like this$0 for inner classes)
+                if (field.isSynthetic()) continue;
+                
                 field.setAccessible(true);
                 Object fieldValue = field.get(value);
                 if (fieldValue instanceof BaseModel) {

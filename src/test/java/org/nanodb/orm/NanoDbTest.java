@@ -42,32 +42,36 @@ public class NanoDbTest {
 	@DisplayName("Creates tables from model fields and ignores @Ignore annotated fields")
 	void createsTablesAndIgnoresAnnotated(@TempDir Path tempDir) throws Exception {
 		String dbFile = tempDir.resolve("nano-test.db").toString();
-		TestDb db = new TestDb(dbFile);
-		assertNotNull(db.users, "users table should be initialized");
+		try (TestDb db = new TestDb(dbFile)) {
+			assertNotNull(db.users, "users table should be initialized");
 
-		// The ignored field should remain null (never set via reflection)
-		Field ignoredField = TestDb.class.getDeclaredField("transientValue");
-		ignoredField.setAccessible(true);
-		assertNull(ignoredField.get(db));
+			// The ignored field should remain null (never set via reflection)
+			Field ignoredField = TestDb.class.getDeclaredField("transientValue");
+			ignoredField.setAccessible(true);
+			assertNull(ignoredField.get(db));
+		}
 	}
 
 	@Test
 	@DisplayName("Migrates schema when model structure changes between instantiations")
 	void migratesSchemaOnChange(@TempDir Path tempDir) throws Exception {
 		String dbFile = tempDir.resolve("nano-migrate.db").toString();
+		StructType originalSchema;
 		// First version
-		TestDb first = new TestDb(dbFile);
-		assertNotNull(first.users);
-		// Capture original schema
-		StructType originalSchema = getTableSchema(first.users);
+		try (TestDb first = new TestDb(dbFile)) {
+			assertNotNull(first.users);
+			// Capture original schema
+			originalSchema = getTableSchema(first.users);
+		}
 
 		// Second version with extra field triggers recreation
-		TestDbV2 second = new TestDbV2(dbFile);
-		StructType newSchema = getTableSchema(second.users);
+		try (TestDbV2 second = new TestDbV2(dbFile)) {
+			StructType newSchema = getTableSchema(second.users);
 
-		// Schemas should differ in field count and names
-		assertNotEquals(originalSchema.getFields().size(), newSchema.getFields().size());
-		assertTrue(newSchema.getFields().stream().anyMatch(p -> p.getKey().equals("age")));
+			// Schemas should differ in field count and names
+			assertNotEquals(originalSchema.getFields().size(), newSchema.getFields().size());
+			assertTrue(newSchema.getFields().stream().anyMatch(p -> p.getKey().equals("age")));
+		}
 	}
 
 	// Additional models for extended coverage
@@ -88,39 +92,44 @@ public class NanoDbTest {
 	@DisplayName("Drops tables no longer declared in subclass on reinitialization")
 	void dropsRemovedTables(@TempDir Path tempDir) throws Exception {
 		String file = tempDir.resolve("nano-drop.db").toString();
-		TestDbTwoTables first = new TestDbTwoTables(file);
-		assertNotNull(first.users);
-		assertNotNull(first.orders);
-		// Insert a user row then reinstantiate with one-table version
-		User u = new User(); u.id = 7; u.name = "X"; first.users.insert(u);
+		try (TestDbTwoTables first = new TestDbTwoTables(file)) {
+			assertNotNull(first.users);
+			assertNotNull(first.orders);
+			// Insert a user row then reinstantiate with one-table version
+			User u = new User(); u.id = 7; u.name = "X"; first.users.insert(u);
 
-		// Reflect internal db for table existence checks
-		Database dbBefore = getInternalDatabase(first);
-		assertTrue(dbBefore.getAllTables().contains("orders"));
-		assertTrue(dbBefore.getAllTables().contains("users"));
+			// Reflect internal db for table existence checks
+			Database dbBefore = getInternalDatabase(first);
+			assertTrue(dbBefore.getAllTables().contains("orders"));
+			assertTrue(dbBefore.getAllTables().contains("users"));
+		}
 
-		TestDbOneTable second = new TestDbOneTable(file);
-		Database dbAfter = getInternalDatabase(second);
-		assertFalse(dbAfter.getAllTables().contains("orders"), "orders table should be dropped");
-		assertTrue(dbAfter.getAllTables().contains("users"), "users table retained");
-		// Existing data should remain (table not recreated due to identical schema)
-		assertEquals(1, second.users.selectAll().size());
+		try (TestDbOneTable second = new TestDbOneTable(file)) {
+			Database dbAfter = getInternalDatabase(second);
+			assertFalse(dbAfter.getAllTables().contains("orders"), "orders table should be dropped");
+			assertTrue(dbAfter.getAllTables().contains("users"), "users table retained");
+			// Existing data should remain (table not recreated due to identical schema)
+			assertEquals(1, second.users.selectAll().size());
+		}
 	}
 
 	@Test
 	@DisplayName("Reinitialization with identical schema reuses existing tables (no drop/create)")
 	void reusesExistingTables(@TempDir Path tempDir) throws Exception {
 		String file = tempDir.resolve("nano-reuse.db").toString();
-		TestDb first = new TestDb(file);
-		User u = new User(); u.id = 1; u.name = "Persist"; first.users.insert(u);
-		// Capture table list after first init
-		Database dbFirst = getInternalDatabase(first);
-		List<String> tablesBefore = dbFirst.getAllTables();
+		List<String> tablesBefore;
+		try (TestDb first = new TestDb(file)) {
+			User u = new User(); u.id = 1; u.name = "Persist"; first.users.insert(u);
+			// Capture table list after first init
+			Database dbFirst = getInternalDatabase(first);
+			tablesBefore = dbFirst.getAllTables();
+		}
 		// Second init with same definition
-		TestDb second = new TestDb(file);
-		Database dbSecond = getInternalDatabase(second);
-		assertEquals(tablesBefore, dbSecond.getAllTables(), "Table list should be unchanged");
-		assertEquals(1, second.users.selectAll().size(), "Row should persist across initialization");
+		try (TestDb second = new TestDb(file)) {
+			Database dbSecond = getInternalDatabase(second);
+			assertEquals(tablesBefore, dbSecond.getAllTables(), "Table list should be unchanged");
+			assertEquals(1, second.users.selectAll().size(), "Row should persist across initialization");
+		}
 	}
 
 	@Test

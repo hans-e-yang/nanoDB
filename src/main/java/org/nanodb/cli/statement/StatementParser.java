@@ -100,14 +100,11 @@ public class StatementParser {
             // Parse: INSERT INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
             String rest = input.substring(12).trim();
 
-            // Find table name (before opening parenthesis or VALUES)
+            // Find table name (before opening parenthesis)
             int openParen = rest.indexOf('(');
-            int valuesIndex = rest.toLowerCase().indexOf("values");
-
-            if (openParen == -1 || valuesIndex == -1) {
+            if (openParen == -1) {
                 return PrepareResult.SYNTAX_ERROR;
             }
-
             statement.tableName = rest.substring(0, openParen).trim();
 
             // Extract column names
@@ -119,6 +116,10 @@ public class StatementParser {
             String[] columns = columnsStr.split(",");
 
             // Extract values
+            int valuesIndex = rest.toLowerCase().indexOf("values");
+            if (valuesIndex == -1) {
+                return PrepareResult.SYNTAX_ERROR;
+            }
             String valuesStr = rest.substring(valuesIndex + 6).trim(); // Skip "values"
             int valuesOpen = valuesStr.indexOf('(');
             int valuesClose = valuesStr.indexOf(')');
@@ -143,8 +144,8 @@ public class StatementParser {
                 }
                 valuesToInsert.put(col, val);
             }
-
             statement.valuesToInsert = valuesToInsert;
+
             statement.type = StatementType.INSERT;
             return PrepareResult.SUCCESS;
         } else if (inputLower.startsWith("select ")) {
@@ -299,21 +300,113 @@ public class StatementParser {
     }
 
     private static Condition parseWhere(String whereStr) {
-        String[] orParts = whereStr.split(" or ");
-        Condition cond = parseAnd(orParts[0]);
-        for (int i = 1; i < orParts.length; i++) {
-            cond = new OrCondition(cond, parseAnd(orParts[i]));
+        whereStr = whereStr.trim();
+        return parseOrExpression(whereStr);
+    }
+
+    /**
+     * Parse OR expression with proper parentheses handling.
+     * Splits on " OR " only when not inside parentheses.
+     */
+    private static Condition parseOrExpression(String str) {
+        str = str.trim();
+        
+        // Find " or " at the top level (not inside parentheses)
+        int depth = 0;
+        int lastSplit = 0;
+        java.util.List<String> parts = new java.util.ArrayList<>();
+        String lowerStr = str.toLowerCase();
+        
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+            } else if (depth == 0 && i + 4 <= str.length() && lowerStr.substring(i, i + 4).equals(" or ")) {
+                parts.add(str.substring(lastSplit, i));
+                lastSplit = i + 4;
+            }
+        }
+        parts.add(str.substring(lastSplit));
+        
+        if (parts.size() == 1) {
+            return parseAndExpression(parts.get(0));
+        }
+        
+        Condition cond = parseAndExpression(parts.get(0));
+        for (int i = 1; i < parts.size(); i++) {
+            cond = new OrCondition(cond, parseAndExpression(parts.get(i)));
         }
         return cond;
     }
 
-    private static Condition parseAnd(String str) {
-        String[] andParts = str.split(" and ");
-        Condition cond = parseComp(andParts[0]);
-        for (int i = 1; i < andParts.length; i++) {
-            cond = new AndCondition(cond, parseComp(andParts[i]));
+    /**
+     * Parse AND expression with proper parentheses handling.
+     * Splits on " AND " only when not inside parentheses.
+     */
+    private static Condition parseAndExpression(String str) {
+        str = str.trim();
+        
+        // Find " and " at the top level (not inside parentheses)
+        int depth = 0;
+        int lastSplit = 0;
+        java.util.List<String> parts = new java.util.ArrayList<>();
+        String lowerStr = str.toLowerCase();
+        
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+            } else if (depth == 0 && i + 5 <= str.length() && lowerStr.substring(i, i + 5).equals(" and ")) {
+                parts.add(str.substring(lastSplit, i));
+                lastSplit = i + 5;
+            }
+        }
+        parts.add(str.substring(lastSplit));
+        
+        if (parts.size() == 1) {
+            return parsePrimaryCondition(parts.get(0));
+        }
+        
+        Condition cond = parsePrimaryCondition(parts.get(0));
+        for (int i = 1; i < parts.size(); i++) {
+            cond = new AndCondition(cond, parsePrimaryCondition(parts.get(i)));
         }
         return cond;
+    }
+
+    /**
+     * Parse a primary condition which is either a parenthesized expression or a comparison.
+     */
+    private static Condition parsePrimaryCondition(String str) {
+        str = str.trim();
+        
+        // Check if the entire expression is wrapped in parentheses
+        if (str.startsWith("(") && str.endsWith(")")) {
+            // Verify that the parentheses are balanced and outer
+            int depth = 0;
+            boolean outerParens = true;
+            for (int i = 0; i < str.length() - 1; i++) {
+                if (str.charAt(i) == '(') {
+                    depth++;
+                } else if (str.charAt(i) == ')') {
+                    depth--;
+                    if (depth == 0) {
+                        outerParens = false;
+                        break;
+                    }
+                }
+            }
+            if (outerParens) {
+                // Remove outer parentheses and parse inner expression
+                return parseOrExpression(str.substring(1, str.length() - 1));
+            }
+        }
+        
+        return parseComp(str);
     }
 
     private static Condition parseComp(String str) {

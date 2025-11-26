@@ -106,10 +106,10 @@ public class FrontendBackendIntegrationTest {
 
         // Insert test data
         String[] inserts = {
-                "INSERT INTO products VALUES (1, 'Laptop', 1200, 'Electronics')",
-                "INSERT INTO products VALUES (2, 'Mouse', 25, 'Electronics')",
-                "INSERT INTO products VALUES (3, 'Desk', 300, 'Furniture')",
-                "INSERT INTO products VALUES (4, 'Chair', 150, 'Furniture')"
+                "INSERT INTO products (id, name, price, category) VALUES (1, 'Laptop', 1200, 'Electronics')",
+                "INSERT INTO products (id, name, price, category) VALUES (2, 'Mouse', 25, 'Electronics')",
+                "INSERT INTO products (id, name, price, category) VALUES (3, 'Desk', 300, 'Furniture')",
+                "INSERT INTO products (id, name, price, category) VALUES (4, 'Chair', 150, 'Furniture')"
         };
 
         for (String sql : inserts) {
@@ -138,8 +138,8 @@ public class FrontendBackendIntegrationTest {
                 "CREATE TABLE accounts (id int, balance int)");
         Executor.execute(createStmt, db);
 
-        Executor.execute(StatementParser.parse("INSERT INTO accounts VALUES (1, 1000)"), db);
-        Executor.execute(StatementParser.parse("INSERT INTO accounts VALUES (2, 500)"), db);
+        Executor.execute(StatementParser.parse("INSERT INTO accounts (id, balance) VALUES (1, 1000)"), db);
+        Executor.execute(StatementParser.parse("INSERT INTO accounts (id, balance) VALUES (2, 500)"), db);
 
         // Simulate transfer: deduct from account 1
         Executor.execute(StatementParser.parse("UPDATE accounts SET balance = 800 WHERE id = 1"), db);

@@ -64,7 +64,9 @@ public class ClassToDataType {
         List<Pair<String, DataType<?>>> fields = new ArrayList<>();
 
         // Sort the fields to have a predictable order
+        // Filter out synthetic fields (like this$0 for inner classes)
          List<Field> fieldList = Arrays.stream(objClass.getDeclaredFields())
+                .filter(f -> !f.isSynthetic())
                 .sorted(FieldComparator.instance)
                  .toList();
 
