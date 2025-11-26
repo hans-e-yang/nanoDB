@@ -76,6 +76,29 @@ public class LinkedListTableTest {
         }
     }
 
+        @Test
+    public void selectFromEmptyTable() throws MissingWhereConditionException{
+        SimpleMapChunker chunker = new SimpleMapChunker(24);
+        StructType schema = createSingleIntSchema();
+        LinkedListTable table = new LinkedListTable(chunker, schema);
+        // No inserts - table is empty
+        // The while loop condition (node.getRecords()) returns empty list
+        List<Map<String, Object>> results = table.select(new TrueCondition(), 100);
+        assertEquals(0, results.size());  // Loop ran 0 times
+    }
+
+    // ONE iteration - Single row, loop executes once
+    @Test
+    public void selectSingleRow() throws MissingWhereConditionException {
+        SimpleMapChunker chunker = new SimpleMapChunker(24);
+        StructType schema = createSingleIntSchema();
+        LinkedListTable table = new LinkedListTable(chunker, schema);
+        table.insert(List.of(row(42)));  // Insert 1 row
+        
+        List<Map<String, Object>> results = table.select(new TrueCondition(), 100);
+        assertEquals(1, results.size());  // Inner loop ran 1 time
+    }
+
     @Test
     public void insertCreatesSecondNodeAndTraversalUsesGetNext() throws MissingWhereConditionException {
         // Use a very small chunk size so each node can hold only a few rows.
