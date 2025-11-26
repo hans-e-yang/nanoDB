@@ -1,6 +1,8 @@
 package org.nanodb.internal.condition.visitor;
 
-public class InvalidColumnNameException extends RuntimeException {
+import org.nanodb.internal.exception.NanoDBException;
+
+public class InvalidColumnNameException extends NanoDBException {
     public InvalidColumnNameException(String message) {
         super(message);
     }

@@ -93,7 +93,7 @@ public class FileChunker extends Chunker {
                 return i; // Return the ID of the new chunk
             }
         }
-        throw new RuntimeException("No more chunks available."); // No available space
+        throw new NoMoreChunksAvailableException("No more chunks available."); // No available space
     }
 
     @Override
