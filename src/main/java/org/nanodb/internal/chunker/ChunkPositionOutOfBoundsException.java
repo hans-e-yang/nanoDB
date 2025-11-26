@@ -1,5 +1,7 @@
 package org.nanodb.internal.chunker;
 
-public class ChunkPositionOutOfBoundsException extends RuntimeException {
+import org.nanodb.internal.NanoDBException;
+
+public class ChunkPositionOutOfBoundsException extends NanoDBException {
     public ChunkPositionOutOfBoundsException(String message) {super(message);}
 }

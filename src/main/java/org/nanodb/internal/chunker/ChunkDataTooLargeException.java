@@ -1,5 +1,7 @@
 package org.nanodb.internal.chunker;
 
-public class ChunkDataTooLargeException extends RuntimeException {
+import org.nanodb.internal.NanoDBException;
+
+public class ChunkDataTooLargeException extends NanoDBException {
     public ChunkDataTooLargeException(String message) {super(message);}
 }
