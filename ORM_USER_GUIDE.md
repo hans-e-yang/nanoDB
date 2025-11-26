@@ -83,10 +83,10 @@ The `Table<T>` class provides methods for CRUD operations on your models.
 import org.nanodb.orm.BaseModel;
 
 public class Student extends BaseModel {
-    public int id;
-    public String name;
-    public String email;
-    public int age;
+    private int id;
+    private String name;
+    private String email;
+    private int age;
 
     // Empty constructor is REQUIRED
     public Student() {
@@ -98,13 +98,25 @@ public class Student extends BaseModel {
         this.email = email;
         this.age = age;
     }
+
+    // Getters
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    public int getAge() { return age; }
+
+    // Setters
+    public void setId(int id) { this.id = id; }
+    public void setName(String name) { this.name = name; }
+    public void setEmail(String email) { this.email = email; }
+    public void setAge(int age) { this.age = age; }
 }
 ```
 
 **Important Requirements:**
 - Must extend `BaseModel`
 - Must have a public empty (no-argument) constructor
-- Fields should be public for automatic mapping
+- Fields should be private with public getters and setters for automatic mapping
 
 ### Supported Field Types
 
@@ -130,13 +142,18 @@ Exclude a field from database mapping:
 import org.nanodb.orm.annotations.Ignore;
 
 public class User extends BaseModel {
-    public int id;
-    public String username;
+    private int id;
+    private String username;
     
     @Ignore
-    public transient String tempPassword; // Won't be stored in database
+    private transient String tempPassword; // Won't be stored in database
     
     public User() {}
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }
 ```
 
@@ -149,12 +166,17 @@ import org.nanodb.orm.annotations.MaximumLength;
 import java.util.List;
 
 public class Task extends BaseModel {
-    public int id;
+    private int id;
     
     @MaximumLength(10)
-    public List<String> tags; // Maximum 10 tags
+    private List<String> tags; // Maximum 10 tags
     
     public Task() {}
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 }
 ```
 
@@ -166,19 +188,33 @@ You can embed one model inside another:
 
 ```java
 public class Address extends BaseModel {
-    public String street;
-    public String city;
-    public String zipCode;
+    private String street;
+    private String city;
+    private String zipCode;
     
     public Address() {}
+
+    public String getStreet() { return street; }
+    public void setStreet(String street) { this.street = street; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    public String getZipCode() { return zipCode; }
+    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
 }
 
 public class Person extends BaseModel {
-    public int id;
-    public String name;
-    public Address address; // Nested model
+    private int id;
+    private String name;
+    private Address address; // Nested model
     
     public Person() {}
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public Address getAddress() { return address; }
+    public void setAddress(Address address) { this.address = address; }
 }
 ```
 
@@ -268,7 +304,7 @@ db.students.insert(student);
 ```java
 List<Student> allStudents = db.students.selectAll();
 for (Student s : allStudents) {
-    System.out.println(s.name);
+    System.out.println(s.getName());
 }
 ```
 
@@ -304,7 +340,7 @@ ComparisonCondition condition = new ComparisonCondition("id", ComparisonOperatio
 int updated = db.students.update(
     condition,
     student -> {
-        student.email = "newemail@example.com";
+        student.setEmail("newemail@example.com");
         return student;
     }
 );
@@ -319,7 +355,7 @@ ComparisonCondition condition = new ComparisonCondition("age", ComparisonOperati
 int updated = db.students.update(
     condition,
     student -> {
-        student.age = 18;
+        student.setAge(18);
         return student;
     },
     10  // Limit to 10 records
@@ -335,7 +371,7 @@ import org.nanodb.internal.condition.BooleanCondition;
 int updated = db.students.update(
     BooleanCondition.TRUE,
     student -> {
-        student.age++;
+        student.setAge(student.getAge() + 1);
         return student;
     }
 );
@@ -451,7 +487,7 @@ List<Student> all = db.students.select(BooleanCondition.TRUE);
 
 // Update all records
 db.students.update(BooleanCondition.TRUE, student -> {
-    student.verified = true;
+    student.setVerified(true);
     return student;
 });
 ```
@@ -473,17 +509,17 @@ import java.util.List;
 
 // Define Models
 class User extends BaseModel {
-    public int id;
-    public String username;
-    public String email;
-    public int age;
-    public boolean active;
+    private int id;
+    private String username;
+    private String email;
+    private int age;
+    private boolean active;
     
     @MaximumLength(5)
-    public List<String> roles;
+    private List<String> roles;
     
     @Ignore
-    public String sessionToken;
+    private String sessionToken;
     
     public User() {}
     
@@ -494,13 +530,29 @@ class User extends BaseModel {
         this.age = age;
         this.active = true;
     }
+
+    // Getters
+    public int getId() { return id; }
+    public String getUsername() { return username; }
+    public String getEmail() { return email; }
+    public int getAge() { return age; }
+    public boolean isActive() { return active; }
+    public List<String> getRoles() { return roles; }
+
+    // Setters
+    public void setId(int id) { this.id = id; }
+    public void setUsername(String username) { this.username = username; }
+    public void setEmail(String email) { this.email = email; }
+    public void setAge(int age) { this.age = age; }
+    public void setActive(boolean active) { this.active = active; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
 }
 
 class Post extends BaseModel {
-    public int id;
-    public int userId;
-    public String title;
-    public String content;
+    private int id;
+    private int userId;
+    private String title;
+    private String content;
     
     public Post() {}
     
@@ -510,6 +562,18 @@ class Post extends BaseModel {
         this.title = title;
         this.content = content;
     }
+
+    // Getters
+    public int getId() { return id; }
+    public int getUserId() { return userId; }
+    public String getTitle() { return title; }
+    public String getContent() { return content; }
+
+    // Setters
+    public void setId(int id) { this.id = id; }
+    public void setUserId(int userId) { this.userId = userId; }
+    public void setTitle(String title) { this.title = title; }
+    public void setContent(String content) { this.content = content; }
 }
 
 // Define Database
@@ -546,7 +610,7 @@ public class BlogApp {
             // Update user age
             ComparisonCondition userCondition = new ComparisonCondition("id", ComparisonOperation.EQUAL, 1);
             db.users.update(userCondition, user -> {
-                user.age = 26;
+                user.setAge(26);
                 return user;
             });
             
@@ -627,8 +691,16 @@ AppDatabase db = new AppDatabase("app.db");
 ```java
 // ✅ Good
 public class User extends BaseModel {
+    private int id;
+    private String name;
+    
     public User() {}
-    public User(int id, String name) { /* ... */ }
+    public User(int id, String name) { this.id = id; this.name = name; }
+    
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 }
 
 // ❌ Bad - will cause runtime errors
@@ -638,19 +710,26 @@ public class User extends BaseModel {
 }
 ```
 
-### 2. Use Public Fields for Persistence
+### 2. Use Private Fields with Public Getters/Setters
 
 ```java
-// ✅ Good - fields are persisted
+// ✅ Good - private fields with public getters/setters are persisted
 public class User extends BaseModel {
-    public int id;
-    public String name;
+    private int id;
+    private String name;
+    
+    public User() {}
+    
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 }
 
-// ⚠️ Private fields won't be persisted
+// ⚠️ Private fields without getters/setters won't be persisted
 public class User extends BaseModel {
-    private int id;  // Won't be saved
-    private String name;  // Won't be saved
+    private int id;  // Won't be saved - no getter/setter
+    private String name;  // Won't be saved - no getter/setter
 }
 ```
 
@@ -658,14 +737,21 @@ public class User extends BaseModel {
 
 ```java
 public class User extends BaseModel {
-    public int id;
-    public String username;
+    private int id;
+    private String username;
     
     @Ignore
-    public String currentSession;  // Temporary data
+    private String currentSession;  // Temporary data
     
     @Ignore
-    public transient boolean isLoading;  // Runtime state
+    private transient boolean isLoading;  // Runtime state
+    
+    public User() {}
+    
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }
 ```
 

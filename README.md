@@ -33,10 +33,21 @@ import org.nanodb.internal.condition.*;
 
 // Define your model
 public class User extends BaseModel {
-    public int id;
-    public String name;
-    public int age;
+    private int id;
+    private String name;
+    private int age;
+    
     public User() {}
+    
+    // Getters
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public int getAge() { return age; }
+    
+    // Setters
+    public void setId(int id) { this.id = id; }
+    public void setName(String name) { this.name = name; }
+    public void setAge(int age) { this.age = age; }
 }
 
 // Create database
@@ -60,7 +71,7 @@ try (MyDatabase db = new MyDatabase("myapp.db")) {
     // Update
     db.users.update(
         new ComparisonCondition("id", ComparisonOperation.EQUAL, 1),
-        user -> { user.age = 26; return user; }
+        user -> { user.setAge(26); return user; }
     );
 
     // Delete
