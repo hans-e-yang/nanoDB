@@ -1,4 +1,4 @@
-A basic database that supports CRUD operations of Structs as Rows, written in Java.
+A basic database that supports CRUD operations of Structs in a form of Rows, written in Java.
 
 ## Quick Start
 
