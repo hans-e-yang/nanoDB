@@ -116,22 +116,25 @@ public class ORMSystemTest {
 
         assertEquals(1, blog.posts.selectAll().size());
         assertEquals(2, blog.users.selectAll().size());
+
+        blog.close();
     }
 
     @Test
     @DisplayName("Empty result set: Query non-existent user")
     void testEmptyResultSet() throws Exception {
         String dbFile = tempDir.resolve("empty.db").toString();
-        BlogDb blog = new BlogDb(dbFile);
-        List<User> users = blog.users.select(new ComparisonCondition("userId", ComparisonOperation.EQUAL, 999), 10);
-        assertTrue(users.isEmpty());
+        try (BlogDb blog = new BlogDb(dbFile)) {
+            List<User> users = blog.users.select(new ComparisonCondition("userId", ComparisonOperation.EQUAL, 999), 10);
+            assertTrue(users.isEmpty());
+        }
     }
 
     @Test
-        @DisplayName("Update/delete with no match: Should not change anything")
-        void testNoMatchUpdateDelete() throws Exception {
-            String dbFile = tempDir.resolve("nomatch.db").toString();
-            BlogDb blog = new BlogDb(dbFile);
+    @DisplayName("Update/delete with no match: Should not change anything")
+    void testNoMatchUpdateDelete() throws Exception {
+        String dbFile = tempDir.resolve("nomatch.db").toString();
+        try (BlogDb blog = new BlogDb(dbFile)) {
             User user = new User();
             user.userId = 40;
             user.username = "nomatch";
@@ -146,5 +149,6 @@ public class ORMSystemTest {
             assertEquals(1, users.size());
             assertEquals("nomatch", users.get(0).username);
         }
+    }
 
     }

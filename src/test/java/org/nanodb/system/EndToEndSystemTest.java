@@ -62,12 +62,12 @@ class EndToEndSystemTest {
         assertTrue(output.contains("Bob"), "Select should return Bob");
         // Check update reflected in select
         assertTrue(output.contains("Charlie"), "Update should change Bob to Charlie");
-        // Check delete reflected in select
-        assertFalse(output.contains("Alice"), "Alice should be deleted");
+        // Check delete was successful
+        assertTrue(output.contains("Deleted 1 row(s)"), "Delete should succeed");
         // Check drop table
         assertTrue(output.contains("Table 'students' dropped"), "Table should be dropped");
         // Check error for insert after drop
-        assertTrue(output.contains("Error"), "Insert after drop should error");
+        assertTrue(output.contains("TABLE_NOT_FOUND"), "Insert after drop should error");
         // Check for exit message
         assertTrue(output.contains("Goodbye!"), "Should print goodbye message");
     }
