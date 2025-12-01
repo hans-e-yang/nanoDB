@@ -30,6 +30,7 @@ public class Executor {
                     return ExecuteResult.TABLE_NOT_FOUND;
                 }
                 if (db.dropTable(statement.tableName)) {
+                    System.out.println("Table '" + statement.tableName + "' dropped");
                     return ExecuteResult.SUCCESS;
                 } else {
                     return ExecuteResult.ERROR;

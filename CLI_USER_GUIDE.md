@@ -52,6 +52,11 @@ CREATE TABLE courses (courseId int, courseName varchar(100), startDate date)
 CREATE TABLE users (userId int, username varchar(30), age int)
 ```
 
+**Success Output:**
+```
+Table 'students' created
+```
+
 **Notes:**
 - Table names and column names are case-sensitive
 - Column definitions are required; creating a table without columns will result in a syntax error
@@ -72,6 +77,11 @@ DROP TABLE <table_name>
 ```sql
 DROP TABLE students
 DROP TABLE old_records
+```
+
+**Success Output:**
+```
+Table 'students' dropped
 ```
 
 **Notes:**
