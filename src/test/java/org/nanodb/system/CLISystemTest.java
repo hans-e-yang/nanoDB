@@ -8,7 +8,7 @@ import org.nanodb.Main;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class EndToEndSystemTest {
+class CLISystemTest {
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private PrintStream originalOut;
     private InputStream originalIn;
