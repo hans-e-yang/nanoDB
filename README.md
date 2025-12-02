@@ -13,12 +13,13 @@ java -jar nanodb-cli.jar
 
 # Example commands
 nanodb> CREATE TABLE users (id INT, name VARCHAR, age INT);
+
 nanodb> INSERT INTO users (id, name, age) VALUES (1, 'Alice', 25);
-nanodb> INSERT INTO users (id, name) VALUES (2, 'Bob');  -- age defaults to 0
-nanodb> INSERT INTO users (id, name, age) VALUES (3, 'Charlie', null);  -- null becomes default
+
 nanodb> SELECT * FROM users WHERE age > 18;
+
 nanodb> UPDATE users SET age = 26 WHERE id = 1;
-nanodb> UPDATE users SET name = null WHERE id = 2;  -- sets to default (empty string)
+
 nanodb> DELETE FROM users WHERE age < 18;
 ```
 
